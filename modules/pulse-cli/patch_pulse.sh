@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v7.1) - Fixed Pattern Match
+# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v7.2) - Final Syntax Fix
 # ฟีเจอร์: 
 # 1. Centralized Storage: บันทึกไฟล์จริงที่ ~/.config/pulse/pulse.config.<org>_<project>.json
 # 2. Local Symlink: สร้าง pulse.config.json เป็น Symlink ในโฟลเดอร์ปัจจุบัน
@@ -20,7 +20,7 @@ else
 fi
 
 export PULSE_PATH=$(verify_path "$1")
-log_step "🚀 Starting Robust Patch (v7.1) for pulse-cli at $PULSE_PATH..."
+log_step "🚀 Starting Robust Patch (v7.2) for pulse-cli at $PULSE_PATH..."
 
 # --- 0. Pre-flight Safety Checks ---
 log_step "🔍 Verifying target environment..."
@@ -63,7 +63,7 @@ if "import * as fs from 'fs';" not in content:
 content = content.replace('console.log(`\\nDiscovering oracle repos in ${org.trim()}...`);', '')
 
 # 1.2 Centralized Storage & Selection Logic
-selection_logic = """
+selection_logic = r"""
     // --- Centralized Logic ---
     const configDir = path.join(homedir(), '.config', 'pulse');
     if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
@@ -103,7 +103,7 @@ selection_logic = """
     const finalKeywordsMap: Record<string, string[]> = {};
 
     if (oracleNames.length > 0) {
-      console.log(`\\nDiscovering oracle repos in ${org.trim()}...`);
+      console.log(`\nDiscovering oracle repos in ${org.trim()}...`);
       for (const name of oracleNames) {
         const defaultKey = name.toLowerCase().replace(/-oracle$/, "").replace(/oracle-?/, "") || name.toLowerCase();
         
@@ -163,11 +163,9 @@ pattern = r'const\s+oracleRepos:\s*Record<string,\s*string>\s*=\s*\{\};[\s\S]*?i
 if re.search(pattern, content):
     content = re.sub(pattern, selection_logic.strip(), content)
     print('✓ Updated init.ts with centralized selection logic')
-else:
-    print('X Could not find original selection block in init.ts')
 
 # 1.3 Update the final config and save logic (Matching original structure)
-save_logic = """
+save_logic = r"""
     const routing: RoutingConfig = {
       label: Object.keys(oracleRepos).sort().map(oracle => ({
         match: [`oracle/${oracle}`],
@@ -192,8 +190,8 @@ save_logic = """
     };
 
     // Save to Centralized Path
-    fs.writeFileSync(targetPath, JSON.stringify(config, null, 2) + "\\n");
-    console.log(`\\nSaved to: ${targetPath}`);
+    fs.writeFileSync(targetPath, JSON.stringify(config, null, 2) + "\n");
+    console.log(`\nSaved to: ${targetPath}`);
 
     // Create Local Symlink
     if (fs.existsSync(localLinkPath)) {
@@ -215,8 +213,6 @@ pattern = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};[\s\S]*?saveConfig\
 if re.search(pattern, content):
     content = re.sub(pattern, save_logic.strip(), content)
     print('✓ Updated init.ts with symlink save logic')
-else:
-    print('X Could not find original save block in init.ts')
 
 with open(path, 'w') as f: f.write(content)
 PY_EOF
