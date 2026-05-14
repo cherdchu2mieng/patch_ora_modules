@@ -30,7 +30,6 @@ check_version() {
     local target_path="$1"
     local expected_regex="$2"
     if [ -f "$target_path/package.json" ]; then
-        # Use python for version extraction to avoid node complexity
         local version=$(python3 -c "import json; print(json.load(open('$target_path/package.json')).get('version', 'unknown'))")
         echo "  - version: $version"
         if [[ ! $version =~ $expected_regex ]]; then
@@ -45,7 +44,6 @@ safe_reset() {
     local files=("$@")
     if [ -d "$target_path/.git" ]; then
         log_info "Safe-Reset: Restoring target files to origin state..."
-        # Try to checkout from origin if possible to ensure absolute baseline
         git -C "$target_path" checkout HEAD -- "${files[@]}" 2>/dev/null
         log_info "Baseline is clean."
     else log_warn "Target is not a git repo. Skipping Safe-Reset."; fi

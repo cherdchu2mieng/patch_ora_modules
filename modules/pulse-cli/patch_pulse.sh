@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v7) - Centralized Symlink Architecture
+# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v7.1) - Fixed Pattern Match
 # ฟีเจอร์: 
 # 1. Centralized Storage: บันทึกไฟล์จริงที่ ~/.config/pulse/pulse.config.<org>_<project>.json
 # 2. Local Symlink: สร้าง pulse.config.json เป็น Symlink ในโฟลเดอร์ปัจจุบัน
@@ -20,7 +20,7 @@ else
 fi
 
 export PULSE_PATH=$(verify_path "$1")
-log_step "🚀 Starting Robust Patch (v7) for pulse-cli at $PULSE_PATH..."
+log_step "🚀 Starting Robust Patch (v7.1) for pulse-cli at $PULSE_PATH..."
 
 # --- 0. Pre-flight Safety Checks ---
 log_step "🔍 Verifying target environment..."
@@ -58,6 +58,9 @@ content = open(path).read()
 # 1.1 Update imports to include path and fs
 if "import * as fs from 'fs';" not in content:
     content = "import * as fs from 'fs';\nimport * as path from 'path';\nimport { homedir } from 'os';\n" + content
+
+# 1.1.1 Remove the redundant "Discovering oracle repos" print from original code
+content = content.replace('console.log(`\\nDiscovering oracle repos in ${org.trim()}...`);', '')
 
 # 1.2 Centralized Storage & Selection Logic
 selection_logic = """
@@ -155,12 +158,15 @@ selection_logic = """
     }, {} as Record<string, string>);
 """
 
-pattern = r'const\s+oracleRepos:[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
+# Pattern should match original oracleRepos Record creation and the discovery block
+pattern = r'const\s+oracleRepos:\s*Record<string,\s*string>\s*=\s*\{\};[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
 if re.search(pattern, content):
     content = re.sub(pattern, selection_logic.strip(), content)
-    print('✓ Updated init.ts with centralized logic')
+    print('✓ Updated init.ts with centralized selection logic')
+else:
+    print('X Could not find original selection block in init.ts')
 
-# 1.3 Update saveConfig call to handle targetPath and Symlink
+# 1.3 Update the final config and save logic (Matching original structure)
 save_logic = """
     const routing: RoutingConfig = {
       label: Object.keys(oracleRepos).sort().map(oracle => ({
@@ -204,10 +210,13 @@ save_logic = """
     console.log(`Created symlink: pulse.config.json -> ${targetFileName}`);
 """
 
-pattern = r'const\s+routing:[\s\S]*?saveConfig\(config\);'
+# Match original config creation and saveConfig(config) call
+pattern = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};[\s\S]*?saveConfig\(config\);[\s\S]*?console\.log\("\\nSaved\s+pulse\.config\.json"\);'
 if re.search(pattern, content):
     content = re.sub(pattern, save_logic.strip(), content)
-    print('✓ Updated init.ts with symlink creation')
+    print('✓ Updated init.ts with symlink save logic')
+else:
+    print('X Could not find original save block in init.ts')
 
 with open(path, 'w') as f: f.write(content)
 PY_EOF
@@ -231,8 +240,6 @@ python3 - <<'PY_EOF'
 import os
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/config.ts')
 content = open(path).read()
-# The require(path) in loadConfig already follows symlinks in Node.js,
-# but we add a comment for clarity.
 if '// Symlink aware' not in content:
     content = content.replace('const path = configPath();', 'const path = configPath(); // Symlink aware')
     with open(path, 'w') as f: f.write(content)
@@ -251,4 +258,4 @@ if [ -f "package.json" ]; then
 fi
 
 log_step "✅ Patch Complete!"
-log_info "Run 'pulse init' to set up your centralized configuration."
+log_info "Run 'pulse init' to establish your centralized configuration."
