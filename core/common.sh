@@ -17,7 +17,8 @@ check_version() {
     local target_path="$1"
     local expected_regex="$2"
     if [ -f "$target_path/package.json" ]; then
-        local version="$(node -e "try { console.log(require('$target_path/package.json').version) } catch(e) { console.log('unknown') }")"
+        # Use python for version extraction to avoid node complexity
+        local version=$(python3 -c "import json; print(json.load(open('$target_path/package.json')).get('version', 'unknown'))")
         echo "  - version: $version"
         if [[ ! $version =~ $expected_regex ]]; then
             log_warn "This patch is tested for $expected_regex. Proceeding with caution..."
