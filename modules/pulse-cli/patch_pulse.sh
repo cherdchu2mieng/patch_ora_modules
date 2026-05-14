@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v7.3) - Safe Code Injection
+# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Org Scope & Gateway Sync (v7.5)
 # ฟีเจอร์: 
-# 1. Safe Injection: ใช้ .replace() แทน re.sub() เพื่อป้องกันการตีความ Backslash ผิดพลาด
-# 2. Centralized Storage: บันทึกไฟล์จริงที่ ~/.config/pulse/pulse.config.<org>_<project>.json
-# 3. Local Symlink: สร้าง pulse.config.json เป็น Symlink ในโฟลเดอร์ปัจจุบัน
-# 4. Baseline Verification: ตรวจสอบ Remote URL (Pulse-Oracle/pulse-cli)
-# 5. Patched Indicator: แสดงเครื่องหมาย (patched 🌊) ในหน้า Help
+# 1. Org Scope: รองรับการเลือก Init ระดับ User หรือ Org
+# 2. Gateway Cross-Sync: หากรัน Init ใน Org ระบบจะซิงค์เฉพาะ Repo ปัจจุบันกลับไปที่ User Config หลักอัตโนมัติ
+# 3. Lean Init: Discovery เฉพาะเมื่อยังไม่มีไฟล์ Config กลาง
+# 4. Smart Symlink: สร้าง Symlink เฉพาะใน Repo ที่ลงท้ายด้วย -oracle
+# 5. Decentralized Keywords: ดึง Identity จากไฟล์ CLAUDE.md มาสร้าง Routing อัตโนมัติ
+# 6. Patched Indicator: เพิ่มเครื่องหมาย (patched 🌊 v7.5) ใน pulse --version
 
 # Source shared logic
 SCRIPT_DIR=$(dirname $(realpath "$0"))
@@ -19,7 +20,7 @@ else
 fi
 
 export PULSE_PATH=$(verify_path "$1")
-log_step "🚀 Starting Robust Patch (v7.3) for pulse-cli at $PULSE_PATH..."
+log_step "🚀 Starting Gateway Patch (v7.5) for pulse-cli at $PULSE_PATH..."
 
 # --- 0. Pre-flight Safety Checks ---
 log_step "🔍 Verifying target environment..."
@@ -28,6 +29,7 @@ verify_remote "$PULSE_PATH" "Pulse-Oracle/pulse-cli"
 
 TARGET_FILES=(
     "packages/cli/src/commands/init.ts"
+    "packages/cli/src/commands/index.ts"
     "packages/cli/src/pulse.ts"
     "packages/cli/src/config.ts"
 )
@@ -44,7 +46,7 @@ done
 safe_reset "$PULSE_PATH" "${TARGET_FILES[@]}"
 
 # --- 1. Patch packages/cli/src/commands/init.ts ---
-log_step "🛠️ Patching init.ts (Safe Injection)..."
+log_step "🛠️ Patching init.ts (Scope & Cross-Sync)..."
 python3 - <<'PY_EOF'
 import os, re
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/init.ts')
@@ -58,199 +60,260 @@ content = open(path).read()
 if "import * as fs from 'fs';" not in content:
     content = "import * as fs from 'fs';\nimport * as path from 'path';\nimport { homedir } from 'os';\n" + content
 
-# 1.1.1 Cleanup redundant log
-content = content.replace('console.log(`\\nDiscovering oracle repos in ${org.trim()}...`);', '')
+# 1.2 Helper for GH User
+if "async function getGHUser()" not in content:
+    helper = """
+async function getGHUser(): Promise<string> {
+  try {
+    const { gh } = require("@pulse-oracle/sdk");
+    const userJson = await gh("api", "user", "-q", ".login");
+    return userJson.trim();
+  } catch (e) {
+    return "";
+  }
+}
+"""
+    content = content.replace('export async function init() {', helper + '\nexport async function init() {')
 
-# 1.2 Centralized Storage & Selection Logic
-selection_logic = r"""
-    // --- Centralized Logic ---
+# 1.3 Implementation Plan Logic
+init_code = r'''export async function init() {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  try {
+    const scopeInput = await ask(rl, "Initialize scope: [U]ser (default) or [O]rg? (u) ");
+    const isOrg = (scopeInput.trim().toLowerCase() || 'u') === 'o';
+    const orgInput = await ask(rl, isOrg ? "GitHub org: " : "GitHub user (default: current): ");
+    
+    const user = await getGHUser();
+    const effectiveOrg = orgInput.trim() || (isOrg ? "" : user);
+
+    if (isOrg && !effectiveOrg) {
+      console.error("Error: Organization name is required for Org scope.");
+      return;
+    }
+
+    const numStr = await ask(rl, "Project number: ");
+    const projectNumber = parseInt(numStr.trim());
+
+    if (!effectiveOrg || isNaN(projectNumber)) {
+      console.error("Invalid org or project number.");
+      return;
+    }
+
     const configDir = path.join(homedir(), '.config', 'pulse');
     if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
     
-    const targetFileName = `pulse.config.${org.trim()}_${projectNumber}.json`;
+    const targetFileName = `pulse.config.${effectiveOrg}_${projectNumber}.json`;
     const targetPath = path.join(configDir, targetFileName);
     const localLinkPath = path.join(process.cwd(), 'pulse.config.json');
 
-    let existing: any = {};
-    try {
-      if (fs.existsSync(targetPath)) {
-        existing = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
-      } else if (fs.existsSync(localLinkPath)) {
-        existing = JSON.parse(fs.readFileSync(localLinkPath, 'utf8'));
-      }
-    } catch {}
+    // --- Discovery Logic ---
+    if (!fs.existsSync(targetPath)) {
+      console.log(`\nNew Fleet detected. Performing discovery scan in ${effectiveOrg}...`);
+      const reposJson = await gh("repo", "list", effectiveOrg, "--json", "name", "--limit", "200");
+      const repos: { name: string }[] = JSON.parse(reposJson);
+      const oracleNames = repos
+        .filter((r) => r.name.toLowerCase().includes("oracle"))
+        .map((r) => r.name);
 
-    const DEFAULT_KEYWORDS: Record<string, string[]> = {
-      gemi: ["orchestrate", "fleet", "patch", "robust", "system", "จัดการ", "กองทัพ", "แพตช์", "ระบบ"],
-      sky: ["search", "trace", "find", "path", "remote", "ค้นหา", "แกะรอย", "พบ", "เส้นทาง"],
-      pegasus: ["coordinate", "sync", "submodule", "synchronize", "ประสานงาน", "ซิงค์", "เชื่อมต่อ"],
-      infographic: ["ui", "design", "visual", "infographic", "graph", "ออกแบบ", "ภาพ", "กราฟ"],
-      vault: ["memory", "backup", "archive", "custodian", "ความจำ", "สำรอง", "คลัง", "ผู้ดูแล"],
-      frontend: ["web", "react", "html", "css", "frontend", "เว็บ", "หน้าบ้าน"],
-      backend: ["api", "database", "server", "node", "backend", "เซิร์ฟเวอร์", "หลังบ้าน"],
-      research: ["study", "analyze", "research", "paper", "ศึกษา", "วิเคราะห์", "วิจัย"]
-    };
-
-    const existingKeywords: Record<string, string[]> = {};
-    if (existing.routing?.keyword) {
-      for (const k of existing.routing.keyword) {
-        existingKeywords[k.oracle] = k.match;
-      }
-    }
-
-    const oracleReposRaw: Record<string, string> = {};
-    const finalKeywordsMap: Record<string, string[]> = {};
-
-    if (oracleNames.length > 0) {
-      console.log(`\nDiscovering oracle repos in ${org.trim()}...`);
+      const oracleRepos: Record<string, string> = {};
       for (const name of oracleNames) {
         const defaultKey = name.toLowerCase().replace(/-oracle$/, "").replace(/oracle-?/, "") || name.toLowerCase();
-        
-        let currentKey = defaultKey;
-        let isIncluded = false;
-        if (existing.oracleRepos) {
-          for (const [k, v] of Object.entries(existing.oracleRepos)) {
-            if (v === name) {
-              currentKey = k;
-              isIncluded = true;
-              break;
-            }
-          }
-        }
-
-        let action = "";
-        if (isIncluded) {
-          action = await ask(rl, `  ${currentKey} (${name}) already included. [e]xclude, [a]djust, [s]kip? (s) `);
-          action = action.trim().toLowerCase() || 's';
+        if (isOrg) {
+          oracleRepos[defaultKey] = name;
         } else {
-          action = await ask(rl, `  Include ${defaultKey} (${name})? [y]es, [n]o, [a]djust? (y) `);
-          action = action.trim().toLowerCase() || 'y';
-        }
-
-        if (action === 'n' || action === 'e') continue;
-        
-        let finalKey = currentKey;
-        let initialKeywords = existingKeywords[currentKey] || DEFAULT_KEYWORDS[currentKey] || [];
-        let finalKeywords = initialKeywords;
-
-        if (action === 'a') {
-          const newName = await ask(rl, `    New Name (Enter for ${currentKey}): `);
-          if (newName.trim()) finalKey = newName.trim();
-          
-          console.log(`    Current Keywords: ${initialKeywords.join(', ') || 'none'}`);
-          const kwInput = await ask(rl, `    New Keywords (comma separated, Enter to keep current): `);
-          if (kwInput.trim()) {
-            finalKeywords = kwInput.split(',').map(k => k.trim()).filter(Boolean);
+          const action = await ask(rl, `  Include ${defaultKey} (${name})? [y]es, [n]o? (y) `);
+          if ((action.trim().toLowerCase() || 'y') === 'y') {
+            oracleRepos[defaultKey] = name;
           }
         }
-
-        oracleReposRaw[finalKey] = name;
-        finalKeywordsMap[finalKey] = finalKeywords;
       }
+      if (isOrg) console.log(`  Auto-included ${Object.keys(oracleRepos).length} oracles from Org.`);
+
+      const config = {
+        org: effectiveOrg,
+        projectNumber,
+        oracleRepos,
+        routing: {
+          label: Object.keys(oracleRepos).sort().map(o => ({ match: [`oracle/${o}`], oracle: o })),
+          repo: Object.entries(oracleRepos).reduce((acc, [o, r]) => { acc[r] = o; return acc; }, {} as any),
+          keyword: Object.keys(oracleRepos).map(o => ({ match: [], oracle: o })),
+          default: "pulse"
+        }
+      };
+      fs.writeFileSync(targetPath, JSON.stringify(config, null, 2) + '\n');
+      console.log(`Created central config: ${targetPath}`);
     } else {
-      console.log("No oracle repos found. You can add them to pulse.config.json later.");
+      console.log(`Found existing central config: ${targetPath}`);
     }
 
-    const oracleRepos = Object.keys(oracleReposRaw).sort().reduce((acc, key) => {
-      acc[key] = oracleReposRaw[key];
-      return acc;
-    }, {} as Record<string, string>);
-"""
-
-pattern_sel = r'const\s+oracleRepos:\s*Record<string,\s*string>\s*=\s*\{\};[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
-match_sel = re.search(pattern_sel, content)
-if match_sel:
-    content = content.replace(match_sel.group(0), selection_logic.strip())
-    print('✓ Updated init.ts with selection logic')
-
-# 1.3 Update save logic
-save_logic = r"""
-    const routing: RoutingConfig = {
-      label: Object.keys(oracleRepos).sort().map(oracle => ({
-        match: [`oracle/${oracle}`],
-        oracle
-      })),
-      repo: Object.entries(oracleRepos).sort((a,b) => a[1].localeCompare(b[1])).reduce((acc, [oracle, repo]) => {
-        const baseRepo = repo.includes("/") ? repo.split("/")[1] : repo;
-        acc[baseRepo] = oracle;
-        return acc;
-      }, {} as Record<string, string>),
-      keyword: Object.entries(finalKeywordsMap)
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([oracle, match]) => ({ match, oracle })),
-      default: oracleRepos["pulse"] ? "pulse" : (oracleRepos["gemi"] ? "gemi" : "pulse")
-    };
-
-    const config: PulseConfig = {
-      org: org.trim(),
-      projectNumber,
-      oracleRepos,
-      routing
-    };
-
-    // Save to Centralized Path
-    fs.writeFileSync(targetPath, JSON.stringify(config, null, 2) + '\n');
-    console.log(`\nSaved to: ${targetPath}`);
-
-    // Create Local Symlink
-    if (fs.existsSync(localLinkPath)) {
-      const stats = fs.lstatSync(localLinkPath);
-      if (!stats.isSymbolicLink()) {
-        const backup = localLinkPath + ".bak";
-        fs.renameSync(localLinkPath, backup);
-        console.log(`Backed up original file to ${backup}`);
-      } else {
-        fs.unlinkSync(localLinkPath);
+    // --- Oracle-only Symlinking & Cross-Sync ---
+    const currentDir = path.basename(process.cwd());
+    if (currentDir.toLowerCase().endsWith("-oracle")) {
+      if (fs.existsSync(localLinkPath)) {
+          const stats = fs.lstatSync(localLinkPath);
+          if (stats.isSymbolicLink()) fs.unlinkSync(localLinkPath);
+          else fs.renameSync(localLinkPath, localLinkPath + ".bak");
       }
-    }
-    fs.symlinkSync(targetPath, localLinkPath);
-    console.log(`Created symlink: pulse.config.json -> ${targetFileName}`);
-"""
+      fs.symlinkSync(targetPath, localLinkPath);
+      console.log(`\nSuccess: Created symlink for Oracle repo: ${currentDir}`);
 
-pattern_save = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};[\s\S]*?saveConfig\(config\);[\s\S]*?console\.log\("\\nSaved\s+pulse\.config\.json"\);'
-match_save = re.search(pattern_save, content)
-if match_save:
-    content = content.replace(match_save.group(0), save_logic.strip())
-    print('✓ Updated init.ts with symlink logic')
+      // --- Cross-Sync Gateway to User Config ---
+      if (isOrg && user) {
+        const userConfigPath = path.join(path.dirname(targetPath), `pulse.config.${user}_${projectNumber}.json`);
+        if (fs.existsSync(userConfigPath)) {
+          console.log(`\n📡 Syncing Gateway Repo to User Config (${user})...`);
+          const userConfig = JSON.parse(fs.readFileSync(userConfigPath, 'utf8'));
+          const oracleName = currentDir.toLowerCase().replace(/-oracle$/, "").replace(/oracle-?/, "") || currentDir.toLowerCase();
+          
+          userConfig.oracleRepos = userConfig.oracleRepos || {};
+          userConfig.oracleRepos[oracleName] = currentDir;
+          
+          if (userConfig.routing && userConfig.routing.repo) {
+            userConfig.routing.repo[currentDir] = oracleName;
+          }
+          
+          fs.writeFileSync(userConfigPath, JSON.stringify(userConfig, null, 2) + '\n');
+          console.log(`✓ Updated User Config: ${userConfigPath}`);
+        }
+      }
+      console.log(`Run 'pulse keyword sync' next to update keywords.`);
+    } else {
+      console.log(`\nWarning: Current directory '${currentDir}' is not an Oracle repo. Skipping symlink.`);
+    }
+  } finally {
+    rl.close();
+  }
+}'''
+
+start_m = "export async function init() {"
+end_m = "rl.close();\n  }\n}"
+if start_m in content and end_m in content:
+    head = content.split(start_m)[0]
+    tail = content.split(end_m)[1]
+    content = head + init_code + tail
+    print("✓ Updated init.ts with Scope & Cross-Sync Logic")
+else:
+    print("X Failed to find init function markers")
 
 with open(path, 'w') as f: f.write(content)
 PY_EOF
 
-# --- 2. Patch packages/cli/src/pulse.ts ---
-log_step "🛠️ Patching pulse.ts (Patched Indicator)..."
+# --- 2. Patch packages/cli/src/commands/index.ts ---
+log_step "🛠️ Patching commands/index.ts (Export Keyword)..."
 python3 - <<'PY_EOF'
 import os
+path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/index.ts')
+content = open(path).read()
+if 'export { keyword }' not in content:
+    content += 'export { keyword } from "./keyword";\n'
+    with open(path, 'w') as f: f.write(content)
+    print('✓ Exported keyword command')
+PY_EOF
+
+# --- 3. Create packages/cli/src/commands/keyword.ts ---
+log_step "🛠️ Creating commands/keyword.ts (Keywords from CLAUDE.md)..."
+cat << 'K_EOF' > "$PULSE_PATH/packages/cli/src/commands/keyword.ts"
+import * as fs from 'fs';
+import * as path from 'path';
+
+export async function keyword(args: string[]) {
+  const sub = args[0];
+  if (sub !== "sync") {
+    console.log("Usage: pulse keyword sync (or pulse kw sync)");
+    return;
+  }
+
+  const localConfigPath = path.join(process.cwd(), 'pulse.config.json');
+  if (!fs.existsSync(localConfigPath)) {
+    console.error("Error: No pulse.config.json found. Run 'pulse init' first.");
+    return;
+  }
+
+  const targetPath = fs.realpathSync(localConfigPath);
+  const config = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
+
+  const currentRepo = path.basename(process.cwd());
+  const oracleName = config.routing?.repo?.[currentRepo];
+
+  if (!oracleName) {
+    console.error(`Error: Repo '${currentRepo}' is not mapped to an Oracle in pulse.config.json`);
+    return;
+  }
+
+  console.log(`Syncing keywords for Oracle: ${oracleName} (from CLAUDE.md)...`);
+
+  const claudePath = path.join(process.cwd(), 'CLAUDE.md');
+  if (!fs.existsSync(claudePath)) {
+    console.error(`Error: CLAUDE.md not found in ${process.cwd()}`);
+    return;
+  }
+
+  const docContent = fs.readFileSync(claudePath, 'utf8');
+  let keywords: string[] = [];
+  
+  const kwMatch = docContent.match(/\*\*Keywords\*\*:\s*([\s\S]+?)(?=\n\n|\n#|$)/);
+  if (kwMatch) {
+    const kwLines = kwMatch[1].split('\n');
+    for (const line of kwLines) {
+      const match = line.match(/^\s*-\s+(?:[^:]+:\s*)?(.+)$/);
+      if (match) {
+        const words = match[1].split(',').map(w => w.trim());
+        keywords.push(...words);
+      }
+    }
+  }
+
+  if (keywords.length === 0) {
+    console.warn(`Warning: No keywords found in CLAUDE.md. (Ensure they follow the **Keywords**: section)`);
+    return;
+  }
+
+  console.log(`Found keywords: ${keywords.join(', ')}`);
+
+  if (!config.routing) config.routing = {};
+  if (!config.routing.keyword) config.routing.keyword = [];
+  const existingIdx = config.routing.keyword.findIndex((k: any) => k.oracle === oracleName);
+  
+  if (existingIdx !== -1) {
+    config.routing.keyword[existingIdx].match = keywords;
+  } else {
+    config.routing.keyword.push({ match: keywords, oracle: oracleName });
+  }
+
+  fs.writeFileSync(targetPath, JSON.stringify(config, null, 2) + '\n');
+  console.log(`Successfully updated global config: ${targetPath}`);
+}
+K_EOF
+
+# --- 4. Patch packages/cli/src/pulse.ts ---
+log_step "🛠️ Patching pulse.ts (Version & Command Link)..."
+python3 - <<'PY_EOF'
+import os, re
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/pulse.ts')
 content = open(path).read()
-indicator = ' (patched 🌊)'
-if indicator not in content:
-    content = content.replace('pulse — GH Projects Master Board CLI', 'pulse — GH Projects Master Board CLI' + indicator)
-    with open(path, 'w') as f: f.write(content)
-    print('✓ Added patched indicator to pulse.ts')
+
+# 4.1 Update Version Indicator
+content = re.sub(r' \(patched 🌊 v7\.4\.[0-9]+\)', ' (patched 🌊 v7.5)', content)
+if '(patched 🌊 v7.5)' not in content:
+    content = content.replace('.version(packageJson.version)', f'.version(packageJson.version + " (patched 🌊 v7.5)")')
+
+# 4.2 Add keyword/kw command
+if 'command("keyword")' not in content:
+    kw_code = """  program
+    .command("keyword")
+    .alias("kw")
+    .description("Sync keywords from CLAUDE.md to central config")
+    .argument("[args...]", "Command arguments")
+    .action(async (args) => {
+      const { keyword } = await import("./commands");
+      await keyword(args);
+    });"""
+    content = content.replace('program.parse();', kw_code + '\n\n  program.parse();')
+
+with open(path, 'w') as f: f.write(content)
+print('✓ Updated pulse.ts with v7.5 version and keyword command')
 PY_EOF
 
-# --- 3. Patch packages/cli/src/config.ts ---
-log_step "🛠️ Patching config.ts (Symlink Awareness)..."
-python3 - <<'PY_EOF'
-import os
-path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/config.ts')
-content = open(path).read()
-if '// Symlink aware' not in content:
-    content = content.replace('const path = configPath();', 'const path = configPath(); // Symlink aware')
-    with open(path, 'w') as f: f.write(content)
-    print('✓ Updated config.ts for clarity')
-PY_EOF
-
-# --- 4. Rebuild ---
-log_step "📦 Rebuilding pulse-cli..."
-cd "$PULSE_PATH"
-if [ -f "package.json" ]; then
-    bun install
-    if [ -d "packages/cli" ]; then
-        cd packages/cli
-        bun run build 2>/dev/null || log_info "No build script in packages/cli, source is ready."
-    fi
-fi
-
-log_step "✅ Patch Complete!"
-log_info "Run 'pulse init' to establish your centralized configuration."
+log_step "✅ Patch Preparation Complete (v7.5)!"
+log_info "The pulse-cli source is patched. Rebuild may be required."
