@@ -25,16 +25,30 @@ chmod +x bin/oracle-patch
 - **Wake All Support**: แทรก logic `maw wake all` เพื่อเปิดการทำงาน Oracle ทั้งหมดในคำสั่งเดียว
 - **Patched Indicator**: เพิ่มเครื่องหมาย `(patched 🌊)` ใน `maw --version`
 
-### 2. `pulse-cli` (Pulse Management)
+### 2. `pulse-cli` (Pulse Management) - **v7.5 ล่าสุด**
 โมดูลสำหรับปรับปรุงระบบจัดการภารกิจ (Master Board)
-- **Automated Init**: ปรับปรุงคำสั่ง `pulse init` ให้ฉลาดขึ้น
-- **Routing Engine**: สร้าง `label` และ `repo` routing อัตโนมัติจากรายชื่อ Oracle ที่ค้นพบ
-- **Multilingual Support**: ใส่ชุด **Thai Keywords** มาตรฐาน (จัดการ, ค้นหา, ออกแบบ, ฯลฯ) ลงในคอนฟิกเริ่มต้น
-- **Default Sentinel**: ตั้งค่า Default Target ไปที่ `pulse` บอร์ด เพื่อป้องกันงานตกหล่น
+- **Lean Init (v7.4)**: ระบบ Symlink คอนฟิกกลาง แทนการสร้างไฟล์ซ้ำซ้อน
+- **Org Scope (v7.5)**: รองรับการเลือก Init ระดับ User หรือ Org (เช่น itinfosv)
+- **Gateway Cross-Sync**: หากรัน Init ใน Org ระบบจะซิงค์เฉพาะ Repo ปัจจุบันกลับไปที่ User Config หลักอัตโนมัติ (Gateway Bridge)
+- **Decentralized Keywords**: ดึง Identity จากไฟล์ `CLAUDE.md` ของแต่ละ Oracle มาสร้าง Routing อัตโนมัติ
+- **Patched Indicator**: เพิ่มเครื่องหมาย `(patched 🌊 v7.5)` ใน `pulse --version`
 
 ---
 
-## 🧭 คู่มือการใช้งาน (Operational Guide)
+## 🧭 คู่มือการตั้งค่าตัวตน (Oracle Identity Setup)
+
+เพื่อให้ระบบ **Pulse** สามารถส่งงาน (Routing) ไปยัง Oracle ที่ถูกต้องได้ แต่ละ Oracle ต้องระบุ Keyword ในไฟล์ `CLAUDE.md` ของตนเองดังนี้:
+
+### การเขียน Keyword ใน `CLAUDE.md`
+ใช้รูปแบบหัวข้อ **Keywords:** (ตัวหนาและมี Colon) เพื่อให้สคริปต์ตรวจจับได้:
+
+**Keywords**:
+- **English**: visualization, design, infographic, ui, ux
+- **Thai**: ออกแบบ, สร้างภาพ, กราฟิก, ยูไอ
+
+---
+
+## 🚀 คู่มือการใช้งาน (Operational Guide)
 
 ### สำหรับ Maw (Fleet Management)
 1. **Patch**: `./bin/oracle-patch maw-js [path_to_maw_js]`
@@ -44,9 +58,14 @@ chmod +x bin/oracle-patch
 
 ### สำหรับ Pulse (Task Orchestration)
 1. **Patch**: `./bin/oracle-patch pulse-cli [path_to_pulse_cli]`
-2. **Init**: `pulse init` ในโฟลเดอร์โครงการ เพื่อสร้าง `pulse.config.json` ที่สมบูรณ์
-3. **Sync**: คัดลอกคอนฟิกไปยังระดับระบบ: `cp pulse.config.json ~/.config/pulse/pulse.config.json`
+2. **Init**: `pulse init` ในโฟลเดอร์โครงการ
+   - เลือกระดับ User สำหรับโครงการส่วนตัว
+   - เลือกระดับ Org สำหรับโครงการทีม (ระบบจะสร้าง Gateway เชื่อมกับ User ให้อัตโนมัติ)
+3. **Keyword Sync**: รันคำสั่งเพื่อซิงค์ตัวตนเข้าบอร์ดกลาง
+   ```bash
+   pulse keyword sync  # หรือ pulse kw sync
+   ```
 
 ---
 **Oracle Signature**: Gemi 🌊 (Deep Blue Horizon)
-*"Patterns over intentions; modular patches over monolithic chaos."*
+*"Identity is declared; systems are synchronized."*
