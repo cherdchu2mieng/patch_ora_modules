@@ -1,13 +1,12 @@
 #!/bin/bash
 
-# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v4) - Advanced Selection & Renaming
+# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v5) - Advanced Formatting & Sorting
 # ฟีเจอร์: 
-# 1. Baseline Verification: ตรวจสอบ Remote URL (Pulse-Oracle/pulse-cli)
-# 2. Advanced Interactive Selection: เลือกรายตัว, เปลี่ยนชื่อ (Rename), เพิ่ม Keyword
-# 3. Existing Config Support: ตรวจสอบไฟล์เดิมเพื่อเลือก Exclude หรือ Adjust
-# 4. Modular Logic: เรียกใช้ core/common.sh
-# 5. Routing Automation: สร้าง label/repo routing และ Thai Keywords อัตโนมัติ
-# 6. Patched Indicator: แสดงเครื่องหมาย (patched 🌊) ในหน้า Help
+# 1. Advanced Formatting: จัดระเบียบ JSON ให้สวยงาม เรียงลำดับตัวอักษร (Sorting)
+# 2. Baseline Verification: ตรวจสอบ Remote URL (Pulse-Oracle/pulse-cli)
+# 3. Advanced Interactive Selection: เลือกรายตัว, เปลี่ยนชื่อ (Rename), เพิ่ม Keyword
+# 4. Existing Config Support: ตรวจสอบไฟล์เดิมเพื่อเลือก Exclude หรือ Adjust
+# 5. Patched Indicator: แสดงเครื่องหมาย (patched 🌊) ในหน้า Help
 
 # Source shared logic
 SCRIPT_DIR=$(dirname $(realpath "$0"))
@@ -20,7 +19,7 @@ else
 fi
 
 export PULSE_PATH=$(verify_path "$1")
-log_step "🚀 Starting Robust Patch (v4) for pulse-cli at $PULSE_PATH..."
+log_step "🚀 Starting Robust Patch (v5) for pulse-cli at $PULSE_PATH..."
 
 # --- 0. Pre-flight Safety Checks ---
 log_step "🔍 Verifying target environment..."
@@ -44,7 +43,7 @@ done
 safe_reset "$PULSE_PATH" "${TARGET_FILES[@]}"
 
 # --- 1. Patch packages/cli/src/commands/init.ts ---
-log_step "🛠️ Patching init.ts (Advanced Oracle Selection)..."
+log_step "🛠️ Patching init.ts (Advanced Sorting & Formatting)..."
 python3 - <<'PY_EOF'
 import os, re
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/init.ts')
@@ -70,7 +69,7 @@ selection_logic = """
       }
     } catch {}
 
-    const oracleRepos: Record<string, string> = {};
+    const oracleReposRaw: Record<string, string> = {};
     const customKeywords: Record<string, string[]> = {};
 
     if (oracleNames.length > 0) {
@@ -115,23 +114,29 @@ selection_logic = """
           }
         }
 
-        oracleRepos[finalKey] = name;
+        oracleReposRaw[finalKey] = name;
         if (keywords.length > 0) customKeywords[finalKey] = keywords;
       }
     } else {
       console.log("No oracle repos found. You can add them to pulse.config.json later.");
     }
+
+    // --- SORTING & FORMATTING ---
+    const oracleRepos = Object.keys(oracleReposRaw).sort().reduce((acc, key) => {
+      acc[key] = oracleReposRaw[key];
+      return acc;
+    }, {} as Record<string, string>);
 """
 
 # Replace the block that handles oracleNames to oracleRepos mapping and selection
 pattern = r'const\s+oracleRepos:[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
 if re.search(pattern, content):
     content = re.sub(pattern, selection_logic.strip(), content)
-    print('✓ Updated init.ts with advanced selection logic')
+    print('✓ Updated init.ts with advanced selection & sorting logic')
 else:
     print('X Could not find selection block in init.ts')
 
-# 1.3 Enhanced logic for routing and config with Keyword merging
+# 1.3 Enhanced logic for routing and config with Merging & Sorting
 new_logic = """
     const standardKeywords = [
       { match: ["orchestrate", "fleet", "patch", "robust", "system", "จัดการ", "กองทัพ", "แพตช์", "ระบบ"], oracle: "gemi" },
@@ -146,28 +151,29 @@ new_logic = """
 
     const mergedKeywords = [...standardKeywords];
     for (const [oracle, kws] of Object.entries(customKeywords)) {
-      const existing = mergedKeywords.find(k => k.oracle === oracle);
-      if (existing) {
-        existing.match = Array.from(new Set([...existing.match, ...kws]));
+      const entry = mergedKeywords.find(k => k.oracle === oracle);
+      if (entry) {
+        entry.match = Array.from(new Set([...entry.match, ...kws]));
       } else {
         mergedKeywords.push({ match: kws, oracle });
       }
     }
 
     const routing: RoutingConfig = {
-      label: Object.keys(oracleRepos).map(oracle => ({
+      label: Object.keys(oracleRepos).sort().map(oracle => ({
         match: [`oracle/${oracle}`],
         oracle
       })),
-      repo: Object.entries(oracleRepos).reduce((acc, [oracle, repo]) => {
+      repo: Object.entries(oracleRepos).sort((a,b) => a[1].localeCompare(b[1])).reduce((acc, [oracle, repo]) => {
         const baseRepo = repo.includes("/") ? repo.split("/")[1] : repo;
         acc[baseRepo] = oracle;
         return acc;
       }, {} as Record<string, string>),
-      keyword: mergedKeywords,
+      keyword: mergedKeywords.sort((a, b) => a.oracle.localeCompare(b.oracle)),
       default: oracleRepos["pulse"] ? "pulse" : (oracleRepos["gemi"] ? "gemi" : "pulse")
     };
 
+    // Construct config with fixed key order for readability
     const config: PulseConfig = {
       org: org.trim(),
       projectNumber,
@@ -179,7 +185,7 @@ new_logic = """
 pattern = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};'
 if re.search(pattern, content):
     content = re.sub(pattern, new_logic.strip(), content)
-    print('✓ Updated init.ts with merged routing logic')
+    print('✓ Updated init.ts with sorted routing logic')
 
 with open(path, 'w') as f: f.write(content)
 PY_EOF
@@ -209,4 +215,4 @@ if [ -f "package.json" ]; then
 fi
 
 log_step "✅ Patch Complete!"
-log_info "Run 'pulse init' to experience the advanced selection flow."
+log_info "Run 'pulse init' to see the beautifully sorted configuration."
