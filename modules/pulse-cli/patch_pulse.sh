@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v5) - Advanced Formatting & Sorting
+# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v6) - Dynamic Keywords
 # ฟีเจอร์: 
-# 1. Advanced Formatting: จัดระเบียบ JSON ให้สวยงาม เรียงลำดับตัวอักษร (Sorting)
-# 2. Baseline Verification: ตรวจสอบ Remote URL (Pulse-Oracle/pulse-cli)
-# 3. Advanced Interactive Selection: เลือกรายตัว, เปลี่ยนชื่อ (Rename), เพิ่ม Keyword
-# 4. Existing Config Support: ตรวจสอบไฟล์เดิมเพื่อเลือก Exclude หรือ Adjust
+# 1. Dynamic Keywords: เลิกใช้ Hardcode ใน JSON; ใช้ Input/Existing เป็นหลัก
+# 2. Advanced Selection: ถามยืนยันรายตัว, เปลี่ยนชื่อ, และจัดการ Keyword ได้อิสระ
+# 3. Baseline Verification: ตรวจสอบ Remote URL (Pulse-Oracle/pulse-cli)
+# 4. JSON Sorting & Formatting: จัดเรียงข้อมูลให้เป็นระเบียบ อ่านง่าย
 # 5. Patched Indicator: แสดงเครื่องหมาย (patched 🌊) ในหน้า Help
 
 # Source shared logic
@@ -19,7 +19,7 @@ else
 fi
 
 export PULSE_PATH=$(verify_path "$1")
-log_step "🚀 Starting Robust Patch (v5) for pulse-cli at $PULSE_PATH..."
+log_step "🚀 Starting Robust Patch (v6) for pulse-cli at $PULSE_PATH..."
 
 # --- 0. Pre-flight Safety Checks ---
 log_step "🔍 Verifying target environment..."
@@ -43,7 +43,7 @@ done
 safe_reset "$PULSE_PATH" "${TARGET_FILES[@]}"
 
 # --- 1. Patch packages/cli/src/commands/init.ts ---
-log_step "🛠️ Patching init.ts (Advanced Sorting & Formatting)..."
+log_step "🛠️ Patching init.ts (Dynamic Keywords & Interactive Flow)..."
 python3 - <<'PY_EOF'
 import os, re
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/init.ts')
@@ -57,7 +57,7 @@ content = open(path).read()
 if 'type RoutingConfig' not in content:
     content = content.replace('import { gh } from "@pulse-oracle/sdk";', 'import { gh, type RoutingConfig } from "@pulse-oracle/sdk";')
 
-# 1.2 Advanced Selection Logic
+# 1.2 Dynamic Selection & Keyword Logic
 selection_logic = """
     const fs = require('fs');
     const path = require('path');
@@ -69,15 +69,32 @@ selection_logic = """
       }
     } catch {}
 
+    const DEFAULT_KEYWORDS: Record<string, string[]> = {
+      gemi: ["orchestrate", "fleet", "patch", "robust", "system", "จัดการ", "กองทัพ", "แพตช์", "ระบบ"],
+      sky: ["search", "trace", "find", "path", "remote", "ค้นหา", "แกะรอย", "พบ", "เส้นทาง"],
+      pegasus: ["coordinate", "sync", "submodule", "synchronize", "ประสานงาน", "ซิงค์", "เชื่อมต่อ"],
+      infographic: ["ui", "design", "visual", "infographic", "graph", "ออกแบบ", "ภาพ", "กราฟ"],
+      vault: ["memory", "backup", "archive", "custodian", "ความจำ", "สำรอง", "คลัง", "ผู้ดูแล"],
+      frontend: ["web", "react", "html", "css", "frontend", "เว็บ", "หน้าบ้าน"],
+      backend: ["api", "database", "server", "node", "backend", "เซิร์ฟเวอร์", "หลังบ้าน"],
+      research: ["study", "analyze", "research", "paper", "ศึกษา", "วิเคราะห์", "วิจัย"]
+    };
+
+    const existingKeywords: Record<string, string[]> = {};
+    if (existing.routing?.keyword) {
+      for (const k of existing.routing.keyword) {
+        existingKeywords[k.oracle] = k.match;
+      }
+    }
+
     const oracleReposRaw: Record<string, string> = {};
-    const customKeywords: Record<string, string[]> = {};
+    const finalKeywordsMap: Record<string, string[]> = {};
 
     if (oracleNames.length > 0) {
       console.log(`\\nDiscovering oracle repos in ${org.trim()}...`);
       for (const name of oracleNames) {
         const defaultKey = name.toLowerCase().replace(/-oracle$/, "").replace(/oracle-?/, "") || name.toLowerCase();
         
-        // Check if already in existing
         let currentKey = defaultKey;
         let isIncluded = false;
         if (existing.oracleRepos) {
@@ -102,26 +119,27 @@ selection_logic = """
         if (action === 'n' || action === 'e') continue;
         
         let finalKey = currentKey;
-        let keywords: string[] = [];
+        let initialKeywords = existingKeywords[currentKey] || DEFAULT_KEYWORDS[currentKey] || [];
+        let finalKeywords = initialKeywords;
 
         if (action === 'a') {
           const newName = await ask(rl, `    New Name (Enter for ${currentKey}): `);
           if (newName.trim()) finalKey = newName.trim();
           
-          const kwInput = await ask(rl, `    Additional Keywords (comma separated): `);
+          console.log(`    Current Keywords: ${initialKeywords.join(', ') || 'none'}`);
+          const kwInput = await ask(rl, `    New Keywords (comma separated, Enter to keep current): `);
           if (kwInput.trim()) {
-            keywords = kwInput.split(',').map(k => k.trim()).filter(Boolean);
+            finalKeywords = kwInput.split(',').map(k => k.trim()).filter(Boolean);
           }
         }
 
         oracleReposRaw[finalKey] = name;
-        if (keywords.length > 0) customKeywords[finalKey] = keywords;
+        finalKeywordsMap[finalKey] = finalKeywords;
       }
     } else {
       console.log("No oracle repos found. You can add them to pulse.config.json later.");
     }
 
-    // --- SORTING & FORMATTING ---
     const oracleRepos = Object.keys(oracleReposRaw).sort().reduce((acc, key) => {
       acc[key] = oracleReposRaw[key];
       return acc;
@@ -132,33 +150,12 @@ selection_logic = """
 pattern = r'const\s+oracleRepos:[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
 if re.search(pattern, content):
     content = re.sub(pattern, selection_logic.strip(), content)
-    print('✓ Updated init.ts with advanced selection & sorting logic')
+    print('✓ Updated init.ts with dynamic selection & keyword logic')
 else:
     print('X Could not find selection block in init.ts')
 
-# 1.3 Enhanced logic for routing and config with Merging & Sorting
+# 1.3 Enhanced logic for routing and config without Hardcoded Keywords in Template
 new_logic = """
-    const standardKeywords = [
-      { match: ["orchestrate", "fleet", "patch", "robust", "system", "จัดการ", "กองทัพ", "แพตช์", "ระบบ"], oracle: "gemi" },
-      { match: ["search", "trace", "find", "path", "remote", "ค้นหา", "แกะรอย", "พบ", "เส้นทาง"], oracle: "sky" },
-      { match: ["coordinate", "sync", "submodule", "synchronize", "ประสานงาน", "ซิงค์", "เชื่อมต่อ"], oracle: "pegasus" },
-      { match: ["ui", "design", "visual", "infographic", "graph", "ออกแบบ", "ภาพ", "กราฟ"], oracle: "infographic" },
-      { match: ["memory", "backup", "archive", "custodian", "ความจำ", "สำรอง", "คลัง", "ผู้ดูแล"], oracle: "vault" },
-      { match: ["web", "react", "html", "css", "frontend", "เว็บ", "หน้าบ้าน"], oracle: "frontend" },
-      { match: ["api", "database", "server", "node", "backend", "เซิร์ฟเวอร์", "หลังบ้าน"], oracle: "backend" },
-      { match: ["study", "analyze", "research", "paper", "ศึกษา", "วิเคราะห์", "วิจัย"], oracle: "research" }
-    ];
-
-    const mergedKeywords = [...standardKeywords];
-    for (const [oracle, kws] of Object.entries(customKeywords)) {
-      const entry = mergedKeywords.find(k => k.oracle === oracle);
-      if (entry) {
-        entry.match = Array.from(new Set([...entry.match, ...kws]));
-      } else {
-        mergedKeywords.push({ match: kws, oracle });
-      }
-    }
-
     const routing: RoutingConfig = {
       label: Object.keys(oracleRepos).sort().map(oracle => ({
         match: [`oracle/${oracle}`],
@@ -169,11 +166,12 @@ new_logic = """
         acc[baseRepo] = oracle;
         return acc;
       }, {} as Record<string, string>),
-      keyword: mergedKeywords.sort((a, b) => a.oracle.localeCompare(b.oracle)),
+      keyword: Object.entries(finalKeywordsMap)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([oracle, match]) => ({ match, oracle })),
       default: oracleRepos["pulse"] ? "pulse" : (oracleRepos["gemi"] ? "gemi" : "pulse")
     };
 
-    // Construct config with fixed key order for readability
     const config: PulseConfig = {
       org: org.trim(),
       projectNumber,
@@ -185,7 +183,7 @@ new_logic = """
 pattern = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};'
 if re.search(pattern, content):
     content = re.sub(pattern, new_logic.strip(), content)
-    print('✓ Updated init.ts with sorted routing logic')
+    print('✓ Updated init.ts with dynamic routing logic')
 
 with open(path, 'w') as f: f.write(content)
 PY_EOF
@@ -215,4 +213,4 @@ if [ -f "package.json" ]; then
 fi
 
 log_step "✅ Patch Complete!"
-log_info "Run 'pulse init' to see the beautifully sorted configuration."
+log_info "Run 'pulse init' to experience the fully dynamic configuration flow."
