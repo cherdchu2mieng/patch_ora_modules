@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v6) - Dynamic Keywords
+# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v7) - Centralized Symlink Architecture
 # ฟีเจอร์: 
-# 1. Dynamic Keywords: เลิกใช้ Hardcode ใน JSON; ใช้ Input/Existing เป็นหลัก
-# 2. Advanced Selection: ถามยืนยันรายตัว, เปลี่ยนชื่อ, และจัดการ Keyword ได้อิสระ
-# 3. Baseline Verification: ตรวจสอบ Remote URL (Pulse-Oracle/pulse-cli)
-# 4. JSON Sorting & Formatting: จัดเรียงข้อมูลให้เป็นระเบียบ อ่านง่าย
-# 5. Patched Indicator: แสดงเครื่องหมาย (patched 🌊) ในหน้า Help
+# 1. Centralized Storage: บันทึกไฟล์จริงที่ ~/.config/pulse/pulse.config.<org>_<project>.json
+# 2. Local Symlink: สร้าง pulse.config.json เป็น Symlink ในโฟลเดอร์ปัจจุบัน
+# 3. Dynamic Selection: เลือกรายตัว, เปลี่ยนชื่อ, จัดการ Keyword (v6 logic)
+# 4. Baseline Verification: ตรวจสอบ Remote URL (Pulse-Oracle/pulse-cli)
+# 5. JSON Sorting & Formatting: จัดเรียงข้อมูลให้เป็นระเบียบ อ่านง่าย
+# 6. Patched Indicator: แสดงเครื่องหมาย (patched 🌊) ในหน้า Help
 
 # Source shared logic
 SCRIPT_DIR=$(dirname $(realpath "$0"))
@@ -19,7 +20,7 @@ else
 fi
 
 export PULSE_PATH=$(verify_path "$1")
-log_step "🚀 Starting Robust Patch (v6) for pulse-cli at $PULSE_PATH..."
+log_step "🚀 Starting Robust Patch (v7) for pulse-cli at $PULSE_PATH..."
 
 # --- 0. Pre-flight Safety Checks ---
 log_step "🔍 Verifying target environment..."
@@ -29,6 +30,7 @@ verify_remote "$PULSE_PATH" "Pulse-Oracle/pulse-cli"
 TARGET_FILES=(
     "packages/cli/src/commands/init.ts"
     "packages/cli/src/pulse.ts"
+    "packages/cli/src/config.ts"
 )
 
 # 0.1 Backup
@@ -43,7 +45,7 @@ done
 safe_reset "$PULSE_PATH" "${TARGET_FILES[@]}"
 
 # --- 1. Patch packages/cli/src/commands/init.ts ---
-log_step "🛠️ Patching init.ts (Dynamic Keywords & Interactive Flow)..."
+log_step "🛠️ Patching init.ts (Centralized Storage & Symlink)..."
 python3 - <<'PY_EOF'
 import os, re
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/init.ts')
@@ -53,19 +55,26 @@ if not os.path.exists(path):
 
 content = open(path).read()
 
-# 1.1 Update imports to include RoutingConfig
-if 'type RoutingConfig' not in content:
-    content = content.replace('import { gh } from "@pulse-oracle/sdk";', 'import { gh, type RoutingConfig } from "@pulse-oracle/sdk";')
+# 1.1 Update imports to include path and fs
+if "import * as fs from 'fs';" not in content:
+    content = "import * as fs from 'fs';\nimport * as path from 'path';\nimport { homedir } from 'os';\n" + content
 
-# 1.2 Dynamic Selection & Keyword Logic
+# 1.2 Centralized Storage & Selection Logic
 selection_logic = """
-    const fs = require('fs');
-    const path = require('path');
+    // --- Centralized Logic ---
+    const configDir = path.join(homedir(), '.config', 'pulse');
+    if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
+    
+    const targetFileName = `pulse.config.${org.trim()}_${projectNumber}.json`;
+    const targetPath = path.join(configDir, targetFileName);
+    const localLinkPath = path.join(process.cwd(), 'pulse.config.json');
+
     let existing: any = {};
     try {
-      const configPath = path.join(process.cwd(), 'pulse.config.json');
-      if (fs.existsSync(configPath)) {
-        existing = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (fs.existsSync(targetPath)) {
+        existing = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
+      } else if (fs.existsSync(localLinkPath)) {
+        existing = JSON.parse(fs.readFileSync(localLinkPath, 'utf8'));
       }
     } catch {}
 
@@ -146,16 +155,13 @@ selection_logic = """
     }, {} as Record<string, string>);
 """
 
-# Replace the block that handles oracleNames to oracleRepos mapping and selection
 pattern = r'const\s+oracleRepos:[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
 if re.search(pattern, content):
     content = re.sub(pattern, selection_logic.strip(), content)
-    print('✓ Updated init.ts with dynamic selection & keyword logic')
-else:
-    print('X Could not find selection block in init.ts')
+    print('✓ Updated init.ts with centralized logic')
 
-# 1.3 Enhanced logic for routing and config without Hardcoded Keywords in Template
-new_logic = """
+# 1.3 Update saveConfig call to handle targetPath and Symlink
+save_logic = """
     const routing: RoutingConfig = {
       label: Object.keys(oracleRepos).sort().map(oracle => ({
         match: [`oracle/${oracle}`],
@@ -178,12 +184,30 @@ new_logic = """
       oracleRepos,
       routing
     };
+
+    // Save to Centralized Path
+    fs.writeFileSync(targetPath, JSON.stringify(config, null, 2) + "\\n");
+    console.log(`\\nSaved to: ${targetPath}`);
+
+    // Create Local Symlink
+    if (fs.existsSync(localLinkPath)) {
+      const stats = fs.lstatSync(localLinkPath);
+      if (!stats.isSymbolicLink()) {
+        const backup = localLinkPath + ".bak";
+        fs.renameSync(localLinkPath, backup);
+        console.log(`Backed up original file to ${backup}`);
+      } else {
+        fs.unlinkSync(localLinkPath);
+      }
+    }
+    fs.symlinkSync(targetPath, localLinkPath);
+    console.log(`Created symlink: pulse.config.json -> ${targetFileName}`);
 """
 
-pattern = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};'
+pattern = r'const\s+routing:[\s\S]*?saveConfig\(config\);'
 if re.search(pattern, content):
-    content = re.sub(pattern, new_logic.strip(), content)
-    print('✓ Updated init.ts with dynamic routing logic')
+    content = re.sub(pattern, save_logic.strip(), content)
+    print('✓ Updated init.ts with symlink creation')
 
 with open(path, 'w') as f: f.write(content)
 PY_EOF
@@ -201,7 +225,21 @@ if indicator not in content:
     print('✓ Added patched indicator to pulse.ts')
 PY_EOF
 
-# --- 3. Rebuild ---
+# --- 3. Patch packages/cli/src/config.ts (Symlink Awareness) ---
+log_step "🛠️ Patching config.ts (Ensuring loadConfig handles symlinks cleanly)..."
+python3 - <<'PY_EOF'
+import os
+path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/config.ts')
+content = open(path).read()
+# The require(path) in loadConfig already follows symlinks in Node.js,
+# but we add a comment for clarity.
+if '// Symlink aware' not in content:
+    content = content.replace('const path = configPath();', 'const path = configPath(); // Symlink aware')
+    with open(path, 'w') as f: f.write(content)
+    print('✓ Updated config.ts for clarity')
+PY_EOF
+
+# --- 4. Rebuild ---
 log_step "📦 Rebuilding pulse-cli..."
 cd "$PULSE_PATH"
 if [ -f "package.json" ]; then
@@ -213,4 +251,4 @@ if [ -f "package.json" ]; then
 fi
 
 log_step "✅ Patch Complete!"
-log_info "Run 'pulse init' to experience the fully dynamic configuration flow."
+log_info "Run 'pulse init' to set up your centralized configuration."
