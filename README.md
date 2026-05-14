@@ -1,10 +1,10 @@
-# Path Oracle 🌊
+# Patch 🌊
 
-Project สำหรับเก็บ Patch และเครื่องมือจัดการเส้นทาง (Paths) และการกำหนดค่า Fleet สำหรับ `maw-js`.
+Project สำหรับเก็บ Patch และเครื่องมือ และการกำหนดค่า Fleet สำหรับ `maw-js`.
 
 ## Tools
 
-### 1. `patch_maw.sh`
+### 1. `modules/maw-js/patch_maw.sh`
 - **Safe-Reset & Version Check**: ตรวจสอบเวอร์ชัน `package.json` และล้างสถานะไฟล์เป้าหมายด้วย `git checkout` ก่อนเริ่ม Patch เพื่อความแม่นยำสูงสุด
 สคริปต์สำหรับอัปเดตโค้ด `maw-js` ให้รองรับ:
 - **Full Repo Slugs**: รวม domain (เช่น `github.com`) ในการสแกน fleet
@@ -15,8 +15,8 @@ Project สำหรับเก็บ Patch และเครื่องม�
 
 #### การติดตั้งและอัปเดต (Installation & Update)
 ```bash
-chmod +x patch_maw.sh
-./patch_maw.sh [path_to_maw_js]
+chmod +x bin/oracle-patch
+./bin/oracle-patch maw-js [path_to_maw_js]
 ```
 
 > **Note**: เมื่อรันสคริปต์เสร็จ ระบบจะทำการ `bun run build` ให้โดยอัตโนมัติเพื่อให้โค้ดใหม่มีผลทันที
@@ -36,7 +36,7 @@ maw --version
 
 ---
 
-### 2. `maw.config.example.json`
+### 2. `modules/maw-js/maw.config.example.json`
 ตัวอย่างไฟล์คอนฟิกสำหรับ `~/.config/maw/maw.config.json` ที่มีการเพิ่มส่วนของ `groups` เข้าไปแล้ว
 
 ---

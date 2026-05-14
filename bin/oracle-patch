@@ -5,9 +5,11 @@ if [ -z "$MODULE" ] || [ -z "$TARGET_PATH" ]; then
     echo "Usage: ./oracle-patch <module> <target_path>"
     exit 1
 fi
-SCRIPT_PATH=$(dirname $(realpath "$0"))/../modules/$MODULE/patch.sh
+# Convention: modules/<module>/patch_<short_name>.sh
+SHORT_NAME=${MODULE%-js}
+SCRIPT_PATH=$(dirname $(realpath "$0"))/../modules/$MODULE/patch_$SHORT_NAME.sh
 if [ ! -f "$SCRIPT_PATH" ]; then
-    echo "Error: Module '$MODULE' not found."
+    echo "Error: Module script not found at $SCRIPT_PATH"
     exit 1
 fi
 bash "$SCRIPT_PATH" "$TARGET_PATH"
