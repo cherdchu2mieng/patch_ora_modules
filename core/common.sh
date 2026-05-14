@@ -13,6 +13,19 @@ verify_path() {
     echo "$(realpath "$target_path")"
 }
 
+verify_remote() {
+    local target_path="$1"
+    local expected_url="$2"
+    if [ -d "$target_path/.git" ]; then
+        local remote_url=$(git -C "$target_path" remote get-url origin 2>/dev/null)
+        if [[ "$remote_url" != *"$expected_url"* ]]; then
+            log_warn "Remote URL ($remote_url) does not match expected ($expected_url)."
+        else
+            log_info "Remote origin verified: $expected_url";
+        fi
+    fi
+}
+
 check_version() {
     local target_path="$1"
     local expected_regex="$2"
@@ -32,7 +45,8 @@ safe_reset() {
     local files=("$@")
     if [ -d "$target_path/.git" ]; then
         log_info "Safe-Reset: Restoring target files to origin state..."
-        git -C "$target_path" checkout "${files[@]}" 2>/dev/null
+        # Try to checkout from origin if possible to ensure absolute baseline
+        git -C "$target_path" checkout HEAD -- "${files[@]}" 2>/dev/null
         log_info "Baseline is clean."
     else log_warn "Target is not a git repo. Skipping Safe-Reset."; fi
 }
