@@ -1,0 +1,13 @@
+#!/bin/bash
+MODULE=$1
+TARGET_PATH=$2
+if [ -z "$MODULE" ] || [ -z "$TARGET_PATH" ]; then
+    echo "Usage: ./oracle-patch <module> <target_path>"
+    exit 1
+fi
+SCRIPT_PATH=$(dirname $(realpath "$0"))/../modules/$MODULE/patch.sh
+if [ ! -f "$SCRIPT_PATH" ]; then
+    echo "Error: Module '$MODULE' not found."
+    exit 1
+fi
+bash "$SCRIPT_PATH" "$TARGET_PATH"
