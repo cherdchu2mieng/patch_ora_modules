@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v3) - Interactive Popup
+# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v4) - Advanced Selection & Renaming
 # ฟีเจอร์: 
 # 1. Baseline Verification: ตรวจสอบ Remote URL (Pulse-Oracle/pulse-cli)
-# 2. Interactive Selection: ถามยืนยันทีละ Oracle (Popup style)
-# 3. Modular Logic: เรียกใช้ core/common.sh
-# 4. Safe-Reset & Version Check: คืนสถานะไฟล์และตรวจสอบความเข้ากันได้
+# 2. Advanced Interactive Selection: เลือกรายตัว, เปลี่ยนชื่อ (Rename), เพิ่ม Keyword
+# 3. Existing Config Support: ตรวจสอบไฟล์เดิมเพื่อเลือก Exclude หรือ Adjust
+# 4. Modular Logic: เรียกใช้ core/common.sh
 # 5. Routing Automation: สร้าง label/repo routing และ Thai Keywords อัตโนมัติ
 # 6. Patched Indicator: แสดงเครื่องหมาย (patched 🌊) ในหน้า Help
 
@@ -20,7 +20,7 @@ else
 fi
 
 export PULSE_PATH=$(verify_path "$1")
-log_step "🚀 Starting Robust Patch for pulse-cli at $PULSE_PATH..."
+log_step "🚀 Starting Robust Patch (v4) for pulse-cli at $PULSE_PATH..."
 
 # --- 0. Pre-flight Safety Checks ---
 log_step "🔍 Verifying target environment..."
@@ -44,7 +44,7 @@ done
 safe_reset "$PULSE_PATH" "${TARGET_FILES[@]}"
 
 # --- 1. Patch packages/cli/src/commands/init.ts ---
-log_step "🛠️ Patching init.ts (Step-by-Step Oracle Selection)..."
+log_step "🛠️ Patching init.ts (Advanced Oracle Selection)..."
 python3 - <<'PY_EOF'
 import os, re
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/init.ts')
@@ -58,40 +58,102 @@ content = open(path).read()
 if 'type RoutingConfig' not in content:
     content = content.replace('import { gh } from "@pulse-oracle/sdk";', 'import { gh, type RoutingConfig } from "@pulse-oracle/sdk";')
 
-# 1.2 Step-by-Step Interactive Selection Logic
+# 1.2 Advanced Selection Logic
 selection_logic = """
-    let oracleRepos: Record<string, string> = {};
-    for (const name of oracleNames) {
-      const key = name.toLowerCase().replace(/-oracle$/, "").replace(/oracle-?/, "");
-      oracleRepos[key || name.toLowerCase()] = name;
-    }
+    const fs = require('fs');
+    const path = require('path');
+    let existing: any = {};
+    try {
+      const configPath = path.join(process.cwd(), 'pulse.config.json');
+      if (fs.existsSync(configPath)) {
+        existing = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      }
+    } catch {}
+
+    const oracleRepos: Record<string, string> = {};
+    const customKeywords: Record<string, string[]> = {};
 
     if (oracleNames.length > 0) {
       console.log(`\\nDiscovering oracle repos in ${org.trim()}...`);
-      console.log(`Found ${oracleNames.length} potential oracles. Please confirm each one:`);
-      const keys = Object.keys(oracleRepos);
-      const filteredRepos: Record<string, string> = {};
-      
-      for (const key of keys) {
-        const confirm = await ask(rl, `  Include ${key} (${oracleRepos[key]})? (Y/n) `);
-        if (confirm.trim().toLowerCase() !== 'n') {
-          filteredRepos[key] = oracleRepos[key];
+      for (const name of oracleNames) {
+        const defaultKey = name.toLowerCase().replace(/-oracle$/, "").replace(/oracle-?/, "") || name.toLowerCase();
+        
+        // Check if already in existing
+        let currentKey = defaultKey;
+        let isIncluded = false;
+        if (existing.oracleRepos) {
+          for (const [k, v] of Object.entries(existing.oracleRepos)) {
+            if (v === name) {
+              currentKey = k;
+              isIncluded = true;
+              break;
+            }
+          }
         }
+
+        let action = "";
+        if (isIncluded) {
+          action = await ask(rl, `  ${currentKey} (${name}) already included. [e]xclude, [a]djust, [s]kip? (s) `);
+          action = action.trim().toLowerCase() || 's';
+        } else {
+          action = await ask(rl, `  Include ${defaultKey} (${name})? [y]es, [n]o, [a]djust? (y) `);
+          action = action.trim().toLowerCase() || 'y';
+        }
+
+        if (action === 'n' || action === 'e') continue;
+        
+        let finalKey = currentKey;
+        let keywords: string[] = [];
+
+        if (action === 'a') {
+          const newName = await ask(rl, `    New Name (Enter for ${currentKey}): `);
+          if (newName.trim()) finalKey = newName.trim();
+          
+          const kwInput = await ask(rl, `    Additional Keywords (comma separated): `);
+          if (kwInput.trim()) {
+            keywords = kwInput.split(',').map(k => k.trim()).filter(Boolean);
+          }
+        }
+
+        oracleRepos[finalKey] = name;
+        if (keywords.length > 0) customKeywords[finalKey] = keywords;
       }
-      oracleRepos = filteredRepos;
     } else {
       console.log("No oracle repos found. You can add them to pulse.config.json later.");
     }
 """
 
-if 'let oracleRepos' not in content:
-    pattern = r'const\s+oracleRepos:[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
-    if re.search(pattern, content):
-        content = re.sub(pattern, selection_logic.strip(), content)
-        print('✓ Updated init.ts with step-by-step selection')
+# Replace the block that handles oracleNames to oracleRepos mapping and selection
+pattern = r'const\s+oracleRepos:[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
+if re.search(pattern, content):
+    content = re.sub(pattern, selection_logic.strip(), content)
+    print('✓ Updated init.ts with advanced selection logic')
+else:
+    print('X Could not find selection block in init.ts')
 
-# 1.3 Enhanced logic for routing and config
+# 1.3 Enhanced logic for routing and config with Keyword merging
 new_logic = """
+    const standardKeywords = [
+      { match: ["orchestrate", "fleet", "patch", "robust", "system", "จัดการ", "กองทัพ", "แพตช์", "ระบบ"], oracle: "gemi" },
+      { match: ["search", "trace", "find", "path", "remote", "ค้นหา", "แกะรอย", "พบ", "เส้นทาง"], oracle: "sky" },
+      { match: ["coordinate", "sync", "submodule", "synchronize", "ประสานงาน", "ซิงค์", "เชื่อมต่อ"], oracle: "pegasus" },
+      { match: ["ui", "design", "visual", "infographic", "graph", "ออกแบบ", "ภาพ", "กราฟ"], oracle: "infographic" },
+      { match: ["memory", "backup", "archive", "custodian", "ความจำ", "สำรอง", "คลัง", "ผู้ดูแล"], oracle: "vault" },
+      { match: ["web", "react", "html", "css", "frontend", "เว็บ", "หน้าบ้าน"], oracle: "frontend" },
+      { match: ["api", "database", "server", "node", "backend", "เซิร์ฟเวอร์", "หลังบ้าน"], oracle: "backend" },
+      { match: ["study", "analyze", "research", "paper", "ศึกษา", "วิเคราะห์", "วิจัย"], oracle: "research" }
+    ];
+
+    const mergedKeywords = [...standardKeywords];
+    for (const [oracle, kws] of Object.entries(customKeywords)) {
+      const existing = mergedKeywords.find(k => k.oracle === oracle);
+      if (existing) {
+        existing.match = Array.from(new Set([...existing.match, ...kws]));
+      } else {
+        mergedKeywords.push({ match: kws, oracle });
+      }
+    }
+
     const routing: RoutingConfig = {
       label: Object.keys(oracleRepos).map(oracle => ({
         match: [`oracle/${oracle}`],
@@ -102,17 +164,8 @@ new_logic = """
         acc[baseRepo] = oracle;
         return acc;
       }, {} as Record<string, string>),
-      keyword: [
-        { match: ["orchestrate", "fleet", "patch", "robust", "system", "จัดการ", "กองทัพ", "แพตช์", "ระบบ"], oracle: "gemi" },
-        { match: ["search", "trace", "find", "path", "remote", "ค้นหา", "แกะรอย", "พบ", "เส้นทาง"], oracle: "sky" },
-        { match: ["coordinate", "sync", "submodule", "synchronize", "ประสานงาน", "ซิงค์", "เชื่อมต่อ"], oracle: "pegasus" },
-        { match: ["ui", "design", "visual", "infographic", "graph", "ออกแบบ", "ภาพ", "กราฟ"], oracle: "infographic" },
-        { match: ["memory", "backup", "archive", "custodian", "ความจำ", "สำรอง", "คลัง", "ผู้ดูแล"], oracle: "vault" },
-        { match: ["web", "react", "html", "css", "frontend", "เว็บ", "หน้าบ้าน"], oracle: "frontend" },
-        { match: ["api", "database", "server", "node", "backend", "เซิร์ฟเวอร์", "หลังบ้าน"], oracle: "backend" },
-        { match: ["study", "analyze", "research", "paper", "ศึกษา", "วิเคราะห์", "วิจัย"], oracle: "research" }
-      ],
-      default: oracleRepos["pulse"] ? "pulse" : "pulse"
+      keyword: mergedKeywords,
+      default: oracleRepos["pulse"] ? "pulse" : (oracleRepos["gemi"] ? "gemi" : "pulse")
     };
 
     const config: PulseConfig = {
@@ -123,11 +176,10 @@ new_logic = """
     };
 """
 
-if 'routing:' not in content:
-    pattern = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};'
-    if re.search(pattern, content):
-        content = re.sub(pattern, new_logic.strip(), content)
-        print('✓ Updated init.ts with routing logic')
+pattern = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};'
+if re.search(pattern, content):
+    content = re.sub(pattern, new_logic.strip(), content)
+    print('✓ Updated init.ts with merged routing logic')
 
 with open(path, 'w') as f: f.write(content)
 PY_EOF
@@ -157,4 +209,4 @@ if [ -f "package.json" ]; then
 fi
 
 log_step "✅ Patch Complete!"
-log_info "Run 'pulse init' to test the new selection flow."
+log_info "Run 'pulse init' to experience the advanced selection flow."
