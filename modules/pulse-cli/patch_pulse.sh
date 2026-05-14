@@ -1,13 +1,12 @@
 #!/bin/bash
 
-# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v7.2) - Final Syntax Fix
+# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v7.3) - Safe Code Injection
 # ฟีเจอร์: 
-# 1. Centralized Storage: บันทึกไฟล์จริงที่ ~/.config/pulse/pulse.config.<org>_<project>.json
-# 2. Local Symlink: สร้าง pulse.config.json เป็น Symlink ในโฟลเดอร์ปัจจุบัน
-# 3. Dynamic Selection: เลือกรายตัว, เปลี่ยนชื่อ, จัดการ Keyword (v6 logic)
+# 1. Safe Injection: ใช้ .replace() แทน re.sub() เพื่อป้องกันการตีความ Backslash ผิดพลาด
+# 2. Centralized Storage: บันทึกไฟล์จริงที่ ~/.config/pulse/pulse.config.<org>_<project>.json
+# 3. Local Symlink: สร้าง pulse.config.json เป็น Symlink ในโฟลเดอร์ปัจจุบัน
 # 4. Baseline Verification: ตรวจสอบ Remote URL (Pulse-Oracle/pulse-cli)
-# 5. JSON Sorting & Formatting: จัดเรียงข้อมูลให้เป็นระเบียบ อ่านง่าย
-# 6. Patched Indicator: แสดงเครื่องหมาย (patched 🌊) ในหน้า Help
+# 5. Patched Indicator: แสดงเครื่องหมาย (patched 🌊) ในหน้า Help
 
 # Source shared logic
 SCRIPT_DIR=$(dirname $(realpath "$0"))
@@ -20,7 +19,7 @@ else
 fi
 
 export PULSE_PATH=$(verify_path "$1")
-log_step "🚀 Starting Robust Patch (v7.2) for pulse-cli at $PULSE_PATH..."
+log_step "🚀 Starting Robust Patch (v7.3) for pulse-cli at $PULSE_PATH..."
 
 # --- 0. Pre-flight Safety Checks ---
 log_step "🔍 Verifying target environment..."
@@ -45,7 +44,7 @@ done
 safe_reset "$PULSE_PATH" "${TARGET_FILES[@]}"
 
 # --- 1. Patch packages/cli/src/commands/init.ts ---
-log_step "🛠️ Patching init.ts (Centralized Storage & Symlink)..."
+log_step "🛠️ Patching init.ts (Safe Injection)..."
 python3 - <<'PY_EOF'
 import os, re
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/init.ts')
@@ -55,11 +54,11 @@ if not os.path.exists(path):
 
 content = open(path).read()
 
-# 1.1 Update imports to include path and fs
+# 1.1 Update imports
 if "import * as fs from 'fs';" not in content:
     content = "import * as fs from 'fs';\nimport * as path from 'path';\nimport { homedir } from 'os';\n" + content
 
-# 1.1.1 Remove the redundant "Discovering oracle repos" print from original code
+# 1.1.1 Cleanup redundant log
 content = content.replace('console.log(`\\nDiscovering oracle repos in ${org.trim()}...`);', '')
 
 # 1.2 Centralized Storage & Selection Logic
@@ -158,13 +157,13 @@ selection_logic = r"""
     }, {} as Record<string, string>);
 """
 
-# Pattern should match original oracleRepos Record creation and the discovery block
-pattern = r'const\s+oracleRepos:\s*Record<string,\s*string>\s*=\s*\{\};[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
-if re.search(pattern, content):
-    content = re.sub(pattern, selection_logic.strip(), content)
-    print('✓ Updated init.ts with centralized selection logic')
+pattern_sel = r'const\s+oracleRepos:\s*Record<string,\s*string>\s*=\s*\{\};[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
+match_sel = re.search(pattern_sel, content)
+if match_sel:
+    content = content.replace(match_sel.group(0), selection_logic.strip())
+    print('✓ Updated init.ts with selection logic')
 
-# 1.3 Update the final config and save logic (Matching original structure)
+# 1.3 Update save logic
 save_logic = r"""
     const routing: RoutingConfig = {
       label: Object.keys(oracleRepos).sort().map(oracle => ({
@@ -190,7 +189,7 @@ save_logic = r"""
     };
 
     // Save to Centralized Path
-    fs.writeFileSync(targetPath, JSON.stringify(config, null, 2) + "\n");
+    fs.writeFileSync(targetPath, JSON.stringify(config, null, 2) + '\n');
     console.log(`\nSaved to: ${targetPath}`);
 
     // Create Local Symlink
@@ -208,11 +207,11 @@ save_logic = r"""
     console.log(`Created symlink: pulse.config.json -> ${targetFileName}`);
 """
 
-# Match original config creation and saveConfig(config) call
-pattern = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};[\s\S]*?saveConfig\(config\);[\s\S]*?console\.log\("\\nSaved\s+pulse\.config\.json"\);'
-if re.search(pattern, content):
-    content = re.sub(pattern, save_logic.strip(), content)
-    print('✓ Updated init.ts with symlink save logic')
+pattern_save = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};[\s\S]*?saveConfig\(config\);[\s\S]*?console\.log\("\\nSaved\s+pulse\.config\.json"\);'
+match_save = re.search(pattern_save, content)
+if match_save:
+    content = content.replace(match_save.group(0), save_logic.strip())
+    print('✓ Updated init.ts with symlink logic')
 
 with open(path, 'w') as f: f.write(content)
 PY_EOF
@@ -230,8 +229,8 @@ if indicator not in content:
     print('✓ Added patched indicator to pulse.ts')
 PY_EOF
 
-# --- 3. Patch packages/cli/src/config.ts (Symlink Awareness) ---
-log_step "🛠️ Patching config.ts (Ensuring loadConfig handles symlinks cleanly)..."
+# --- 3. Patch packages/cli/src/config.ts ---
+log_step "🛠️ Patching config.ts (Symlink Awareness)..."
 python3 - <<'PY_EOF'
 import os
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/config.ts')
