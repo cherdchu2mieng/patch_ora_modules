@@ -1,37 +1,49 @@
 #!/bin/bash
 
-# สคริปต์สำหรับอัปเดต pulse-cli: ปรับปรุง pulse init ให้รองรับ Routing อัตโนมัติ และการเลือก Oracle
+# สคริปต์สำหรับอัปเดต pulse-cli: เวอร์ชัน Robust (v2)
 # ฟีเจอร์: 
-# 1. เลือก Oracle เฉพาะที่ต้องการ (Interactive Selection)
-# 2. สร้าง label, repo routing จาก oracleRepos อัตโนมัติ
-# 3. ใส่ Thai Keywords เริ่มต้น
-# วิธีใช้: chmod +x patch_pulse.sh && ./patch_pulse.sh <path_to_pulse_cli>
+# 1. Modular Logic: เรียกใช้ core/common.sh สำหรับความปลอดภัย
+# 2. Safe-Reset & Version Check: คืนสถานะไฟล์และตรวจสอบความเข้ากันได้
+# 3. Interactive Selection: เลือก Oracle ที่ต้องการรวมในคอนฟิกได้
+# 4. Routing Automation: สร้าง label/repo routing และ Thai Keywords อัตโนมัติ
+# 5. Patched Indicator: แสดงเครื่องหมาย (patched 🌊) ในหน้า Help
+# 6. Backup Support: บันทึกไฟล์เดิมก่อนทำการแก้ไข
 
-export PULSE_PATH="$1"
-
-if [ -z "$PULSE_PATH" ]; then
-    echo -e "\x1b[31mError: Missing pulse-cli path.\x1b[0m"
+# Source shared logic
+SCRIPT_DIR=$(dirname $(realpath "$0"))
+COMMON_SH="$SCRIPT_DIR/../../core/common.sh"
+if [ -f "$COMMON_SH" ]; then
+    source "$COMMON_SH"
+else
+    echo "Error: common.sh not found at $COMMON_SH"
     exit 1
 fi
 
-if [ ! -d "$PULSE_PATH" ]; then
-    echo -e "\x1b[31mError: Path $PULSE_PATH not found.\x1b[0m"
-    exit 1
-fi
-
-export PULSE_PATH=$(readlink -f "$PULSE_PATH")
-
-echo "🚀 Starting Robust Patch for pulse-cli at $PULSE_PATH..."
+export PULSE_PATH=$(verify_path "$1")
+log_step "🚀 Starting Robust Patch for pulse-cli at $PULSE_PATH..."
 
 # --- 0. Pre-flight Safety Checks ---
-if [ -d "$PULSE_PATH/.git" ]; then
-    echo "🧹 Safe-Reset: Restoring target files to origin state..."
-    git -C "$PULSE_PATH" checkout \
-        packages/cli/src/commands/init.ts 2>/dev/null
-    echo "  ✓ Baseline is clean."
-fi
+log_step "🔍 Verifying target environment..."
+check_version "$PULSE_PATH" "^1\."
 
-# --- 1. Patch src/commands/init.ts ---
+TARGET_FILES=(
+    "packages/cli/src/commands/init.ts"
+    "packages/cli/src/pulse.ts"
+)
+
+# 0.1 Backup
+log_info "Creating backups..."
+for f in "${TARGET_FILES[@]}"; do
+    if [ -f "$PULSE_PATH/$f" ]; then
+        cp "$PULSE_PATH/$f" "$PULSE_PATH/$f.bfpch.bak"
+    fi
+done
+
+# 0.2 Safe-Reset
+safe_reset "$PULSE_PATH" "${TARGET_FILES[@]}"
+
+# --- 1. Patch packages/cli/src/commands/init.ts ---
+log_step "🛠️ Patching init.ts (Interactive Selection & Routing)..."
 python3 - <<'PY_EOF'
 import os, re
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/init.ts')
@@ -122,15 +134,31 @@ if 'routing:' not in content:
 with open(path, 'w') as f: f.write(content)
 PY_EOF
 
-# --- 2. Rebuild ---
-echo -e "\n📦 Rebuilding pulse-cli..."
+# --- 2. Patch packages/cli/src/pulse.ts ---
+log_step "🛠️ Patching pulse.ts (Patched Indicator)..."
+python3 - <<'PY_EOF'
+import os
+path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/pulse.ts')
+content = open(path).read()
+indicator = ' (patched 🌊)'
+if indicator not in content:
+    content = content.replace('pulse — GH Projects Master Board CLI', 'pulse — GH Projects Master Board CLI' + indicator)
+    with open(path, 'w') as f: f.write(content)
+    print('✓ Added patched indicator to pulse.ts')
+else:
+    print('i pulse.ts already has patched indicator')
+PY_EOF
+
+# --- 3. Rebuild ---
+log_step "📦 Rebuilding pulse-cli..."
 cd "$PULSE_PATH"
 if [ -f "package.json" ]; then
     bun install
     if [ -d "packages/cli" ]; then
         cd packages/cli
-        bun run build 2>/dev/null || echo "i No build script in packages/cli, source is ready."
+        bun run build 2>/dev/null || log_info "No build script in packages/cli, source is ready."
     fi
 fi
 
-echo -e "\n✅ Patch Complete!"
+log_step "✅ Patch Complete!"
+log_info "Run 'pulse --help' to verify."

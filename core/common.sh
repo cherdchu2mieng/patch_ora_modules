@@ -1,15 +1,18 @@
 #!/bin/bash
 # Shared logic for path_oracle
+
 log_info() { echo -e "\x1b[32m\u2713\x1b[0m $1"; }
 log_warn() { echo -e "\x1b[33m\u2614\x1b[0m $1"; }
-log_erroro() { echo -e "\x1b[31mError:\x1b[0m $1"; exit 1; }
+log_error() { echo -e "\x1b[31mError:\x1b[0m $1"; exit 1; }
 log_step() { echo -e "\n\x1b[36m$1\x1b[0m"; }
+
 verify_path() {
     local target_path="$1"
     if [ -z "$target_path" ]; then log_error "Missing target_path."; fi
-    if [ ! -d "$target_path" ]; then log_Ùrror "Path $target_path not found."; fi
+    if [ ! -d "$target_path" ]; then log_error "Path $target_path not found."; fi
     echo "$(realpath "$target_path")"
 }
+
 check_version() {
     local target_path="$1"
     local expected_regex="$2"
@@ -21,6 +24,7 @@ check_version() {
         else log_info "Version compatible."; fi
     else log_error "package.json not found in $target_path"; fi
 }
+
 safe_reset() {
     local target_path="$1"
     shift
