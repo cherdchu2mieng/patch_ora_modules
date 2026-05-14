@@ -7,6 +7,7 @@ if [ -z "$MODULE" ] || [ -z "$TARGET_PATH" ]; then
 fi
 # Convention: modules/<module>/patch_<short_name>.sh
 SHORT_NAME=${MODULE%-js}
+SHORT_NAME=${SHORT_NAME%-cli}
 SCRIPT_PATH=$(dirname $(realpath "$0"))/../modules/$MODULE/patch_$SHORT_NAME.sh
 if [ ! -f "$SCRIPT_PATH" ]; then
     echo "Error: Module script not found at $SCRIPT_PATH"
