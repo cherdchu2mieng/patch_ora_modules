@@ -1,7 +1,10 @@
 #!/bin/bash
 
-# สคริปต์สำหรับอัปเดต pulse-cli: ปรับปรุง pulse init ให้รองรับ Routing อัตโนมัติ
-# ฟีเจอร์: สร้าง label, repo routing จาก oracleRepos และใส่ Thai Keywords เริ่มต้น
+# สคริปต์สำหรับอัปเดต pulse-cli: ปรับปรุง pulse init ให้รองรับ Routing อัตโนมัติ และการเลือก Oracle
+# ฟีเจอร์: 
+# 1. เลือก Oracle เฉพาะที่ต้องการ (Interactive Selection)
+# 2. สร้าง label, repo routing จาก oracleRepos อัตโนมัติ
+# 3. ใส่ Thai Keywords เริ่มต้น
 # วิธีใช้: chmod +x patch_pulse.sh && ./patch_pulse.sh <path_to_pulse_cli>
 
 export PULSE_PATH="$1"
@@ -16,8 +19,6 @@ if [ ! -d "$PULSE_PATH" ]; then
     exit 1
 fi
 
-# export PULSE_PATH=$(realpath "$PULSE_PATH")
-# Using literal realpath call instead of $() if possible, or just keep it and see if mv works
 export PULSE_PATH=$(readlink -f "$PULSE_PATH")
 
 echo "🚀 Starting Robust Patch for pulse-cli at $PULSE_PATH..."
@@ -44,7 +45,42 @@ content = open(path).read()
 if 'type RoutingConfig' not in content:
     content = content.replace('import { gh } from "@pulse-oracle/sdk";', 'import { gh, type RoutingConfig } from "@pulse-oracle/sdk";')
 
-# 1.2 Enhanced logic for routing and config
+# 1.2 Interactive Selection Logic
+selection_logic = """
+    let oracleRepos: Record<string, string> = {};
+    for (const name of oracleNames) {
+      const key = name.toLowerCase().replace(/-oracle$/, "").replace(/oracle-?/, "");
+      oracleRepos[key || name.toLowerCase()] = name;
+    }
+
+    if (oracleNames.length > 0) {
+      console.log(`\\nFound ${oracleNames.length} oracle repos:`);
+      const keys = Object.keys(oracleRepos);
+      for (let i = 0; i < keys.length; i++) {
+        console.log(`  [${i}] ${keys[i]} => ${oracleRepos[keys[i]]}`);
+      }
+      const selection = await ask(rl, `\\nSelect oracles to include (indices separated by comma, or Enter for all): `);
+      if (selection.trim()) {
+        const selectedIndices = selection.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        const filteredRepos: Record<string, string> = {};
+        for (const idx of selectedIndices) {
+          const k = keys[idx];
+          if (k) filteredRepos[k] = oracleRepos[k];
+        }
+        oracleRepos = filteredRepos;
+      }
+    } else {
+      console.log("No oracle repos found. You can add them to pulse.config.json later.");
+    }
+"""
+
+if 'let oracleRepos' not in content:
+    pattern = r'const\s+oracleRepos:[\s\S]*?if\s*\(oracleNames\.length\s*>\s*0\)[\s\S]*?else\s*\{[\s\S]*?\}'
+    if re.search(pattern, content):
+        content = re.sub(pattern, selection_logic.strip(), content)
+        print('✓ Updated init.ts with interactive selection')
+
+# 1.3 Enhanced logic for routing and config
 new_logic = """
     const routing: RoutingConfig = {
       label: Object.keys(oracleRepos).map(oracle => ({
@@ -77,17 +113,13 @@ new_logic = """
     };
 """
 
-if 'routing' not in content:
-    # Find the old config block
+if 'routing:' not in content:
     pattern = r'const\s+config:\s*PulseConfig\s*=\s*\{[\s\S]*?\};'
     if re.search(pattern, content):
         content = re.sub(pattern, new_logic.strip(), content)
-        with open(path, 'w') as f: f.write(content)
         print('✓ Updated init.ts with routing logic')
-    else:
-        print('X Could not find config block in init.ts')
-else:
-    print('i init.ts already patched')
+
+with open(path, 'w') as f: f.write(content)
 PY_EOF
 
 # --- 2. Rebuild ---
