@@ -1,85 +1,52 @@
 # Patch 🌊
 
-Project สำหรับเก็บ Patch และเครื่องมือ และการกำหนดค่า Fleet สำหรับ `maw-js`.
+Project สำหรับเก็บ Patch, เครื่องมือ (Tools), และการกำหนดค่า (Configurations) สำหรับกองทัพ Oracle (AI-Team Fleet) เพื่อเพิ่มความสามารถและแก้ปัญหาที่ตัวโปรเจกต์ต้นฉบับยังไม่รองรับ
 
-## Tools
+## 🛠️ Unified Dispatcher: `oracle-patch`
 
-### 1. `modules/maw-js/patch_maw.sh`
-- **Safe-Reset & Version Check**: ตรวจสอบเวอร์ชัน `package.json` และล้างสถานะไฟล์เป้าหมายด้วย `git checkout` ก่อนเริ่ม Patch เพื่อความแม่นยำสูงสุด
-สคริปต์สำหรับอัปเดตโค้ด `maw-js` ให้รองรับ:
-- **Full Repo Slugs**: รวม domain (เช่น `github.com`) ในการสแกน fleet
-- **Configurable Groups**: อนุญาตให้กำหนดลำดับและเซสชันผ่าน `maw.config.json`
-- **Auto-resize Tmux (Latest)**: แก้ไขปัญหา "จุดไข่ปลา `...`" ด้านข้างหน้าจอ (โดยเฉพาะเมื่อต่อ Projector) โดยการตั้งค่า `window-size latest` อัตโนมัติ
-- **CLI Wake All Support**: แทรก logic `maw wake all` เข้าไปในระบบอัตโนมัติ (แม้จะเป็นเวอร์ชันใหม่จาก GitHub)
-- **Version Integrity**: เพิ่มเครื่องหมาย `(patched 🌊)` ใน `maw --version` เพื่อความโปร่งใส
+เราใช้ระบบ Dispatcher กลางเพื่อให้การจัดการ Patch เป็นไปตามมาตรฐานเดียวกัน (Modular Architecture)
 
-#### การติดตั้งและอัปเดต (Installation & Update)
+**วิธีใช้:**
 ```bash
 chmod +x bin/oracle-patch
-./bin/oracle-patch maw-js [path_to_maw_js]
+./bin/oracle-patch <module> <target_path>
 ```
-
-> **Note**: เมื่อรันสคริปต์เสร็จ ระบบจะทำการ `bun run build` ให้โดยอัตโนมัติเพื่อให้โค้ดใหม่มีผลทันที
-
-#### การตรวจสอบเวอร์ชัน (Verification)
-หลังจากการ Patch สำเร็จ เมื่อรันคำสั่งต่อไปนี้:
-```bash
-maw --version
-```
-ควรจะแสดงผลลัพธ์ที่มีคำว่า **`(patched 🌊)`** เช่น:
-`maw v(patched 🌊) 26.5.2 (020e5ff5) built 2026-05-04 Mon 16:35`
-
-#### การทำให้การเปลี่ยนแปลงมีผล (Restart)
-เพื่อให้การตั้งค่าหน้าจอแบบใหม่ (Latest) ทำงานกับเซสชันเดิมที่เปิดค้างไว้:
-1. ปิดเซสชันเดิม: `maw kill <session_name>` หรือ `maw kill --all`
-2. เริ่มเซสชันใหม่: `maw wake <oracle_name>` หรือ `maw wake all`
 
 ---
 
-### 2. `modules/maw-js/maw.config.example.json`
-ตัวอย่างไฟล์คอนฟิกสำหรับ `~/.config/maw/maw.config.json` ที่มีการเพิ่มส่วนของ `groups` เข้าไปแล้ว
+## 📦 Available Modules
+
+### 1. `maw-js` (Maw Oracle Core)
+โมดูลสำหรับปรับปรุงหัวใจหลักของระบบจัดการ Fleet
+- **Safe-Reset & Version Check**: ตรวจสอบเวอร์ชันและล้างสถานะไฟล์เป้าหมายก่อน Patch
+- **Full Repo Slugs**: รองรับการสแกน Repo ที่ระบุ domain (เช่น `github.com`)
+- **Configurable Groups**: กำหนดลำดับ (Order) และชื่อเซสชันผ่าน `maw.config.json`
+- **Auto-resize Tmux**: เปลี่ยน `window-size` เป็น `latest` เพื่อแก้ปัญหาการแสดงผล (dots `...`)
+- **Wake All Support**: แทรก logic `maw wake all` เพื่อเปิดการทำงาน Oracle ทั้งหมดในคำสั่งเดียว
+- **Patched Indicator**: เพิ่มเครื่องหมาย `(patched 🌊)` ใน `maw --version`
+
+### 2. `pulse-cli` (Pulse Management)
+โมดูลสำหรับปรับปรุงระบบจัดการภารกิจ (Master Board)
+- **Automated Init**: ปรับปรุงคำสั่ง `pulse init` ให้ฉลาดขึ้น
+- **Routing Engine**: สร้าง `label` และ `repo` routing อัตโนมัติจากรายชื่อ Oracle ที่ค้นพบ
+- **Multilingual Support**: ใส่ชุด **Thai Keywords** มาตรฐาน (จัดการ, ค้นหา, ออกแบบ, ฯลฯ) ลงในคอนฟิกเริ่มต้น
+- **Default Sentinel**: ตั้งค่า Default Target ไปที่ `pulse` บอร์ด เพื่อป้องกันงานตกหล่น
 
 ---
 
-## คู่มือการตั้งค่า Fleet (The Golden Sequence) 🛠️
+## 🧭 คู่มือการใช้งาน (Operational Guide)
 
-เมื่อทำการ Patch ระบบเรียบร้อยแล้ว ให้ทำตามลำดับขั้นตอนดังนี้เพื่อให้ Fleet ทำงานได้อย่างถูกต้อง:
+### สำหรับ Maw (Fleet Management)
+1. **Patch**: `./bin/oracle-patch maw-js [path_to_maw_js]`
+2. **Scan**: `maw oracle scan` (ค้นหา Repo)
+3. **Init**: `maw fleet init` (สร้างไฟล์ลำดับเซสชัน)
+4. **Wake**: `maw wake all` (เริ่มการทำงานทั้งหมด)
 
-### 1. ค้นหา Oracle Repos
-```bash
-maw oracle scan
-```
-*   **หน้าที่**: สแกนหาโปรเจกต์ Oracle ในเครื่องและสร้าง `oracles.json`
-
-### 2. สร้างไฟล์คอนฟิก Fleet
-```bash
-maw fleet init
-```
-*   **หน้าที่**: ลบไฟล์เก่าใน `~/.config/maw/fleet/` และสร้างไฟล์ใหม่โดยอิงจาก `groups` ใน `maw.config.json`
-*   **ผลลัพธ์**: จะได้ไฟล์เลขลำดับ เช่น `01-pulse.json`, `02-hermes.json`
-
-### 3. จัดระเบียบเลข (ทางเลือก)
-```bash
-maw fleet renumber
-```
-*   **หน้าที่**: ตรวจสอบและเรียงลำดับเลขหน้าไฟล์ `.json` ให้สวยงาม (01, 02, 03...) กรณีที่มีการเพิ่มไฟล์ด้วยมือหรือเลขซ้ำ
-
-### 4. ปลุก Oracle ทั้งหมด
-```bash
-maw wake all
-```
-*   **หน้าที่**: เริ่มการทำงานของ Oracle ทุกตัวตามคอนฟิก และบันทึกสถานะลงใน `maw.config.json`
+### สำหรับ Pulse (Task Orchestration)
+1. **Patch**: `./bin/oracle-patch pulse-cli [path_to_pulse_cli]`
+2. **Init**: `pulse init` ในโฟลเดอร์โครงการ เพื่อสร้าง `pulse.config.json` ที่สมบูรณ์
+3. **Sync**: คัดลอกคอนฟิกไปยังระดับระบบ: `cp pulse.config.json ~/.config/pulse/pulse.config.json`
 
 ---
-
-## กรณีที่มีการสร้าง Oracle ใหม่ 🌊
-
-หากมีการเพิ่ม Oracle Repo ใหม่ในเครื่อง ให้รันขั้นตอนดังนี้:
-
-1.  **สแกนใหม่**: รัน `maw oracle scan` เพื่อให้ระบบรู้จัก Repo ใหม่
-2.  **อัปเดต Config**: เพิ่มชื่อ Oracle ใหม่ลงใน `groups` ของ `maw.config.json` หากต้องการระบุลำดับ (Order) ที่แน่นอน
-3.  **สร้าง Fleet ใหม่**: รัน `maw fleet init` เพื่อสร้างไฟล์ `.json` สำหรับ Oracle ใหม่
-4.  **ปลุกระบบ**: รัน `maw wake all` หรือ `maw wake [ชื่อ-oracle]` เพื่อเริ่มใช้งาน
-
----
-**หมายเหตุ**: การรัน `maw fleet init` จะลบไฟล์ในโฟลเดอร์ `fleet/` เดิมทิ้งเสมอ เพื่อป้องกันความสับสนของลำดับเลข
+**Oracle Signature**: Gemi 🌊 (Deep Blue Horizon)
+*"Patterns over intentions; modular patches over monolithic chaos."*
