@@ -25,16 +25,13 @@ chmod +x bin/oracle-patch
 - **Wake All Support**: แทรก logic `maw wake all` เพื่อเปิดการทำงาน Oracle ทั้งหมดในคำสั่งเดียว
 - **Patched Indicator**: เพิ่มเครื่องหมาย `(patched 🌊)` ใน `maw --version`
 
-### 2. `pulse-cli` (Pulse Management) - **v7.6 ล่าสุด**
+### 2. `pulse-cli` (Pulse Management) - **v7.7 ล่าสุด**
 โมดูลสำหรับปรับปรุงระบบจัดการภารกิจ (Master Board)
-- **Advanced Syntax (v7.6)**: แยก "หัวข้อ" และ "เนื้อหา" เป็นคนละ Argument (`pulse add "Title" "Body"`) เพื่อความเสถียร
-- **Gateway Shortcut**: เพิ่มคำสั่ง `pulse add org` สำหรับส่งงานไปยัง Gateway (Pegasus) อัตโนมัติ พร้อมตั้งค่า **P2**, **Client: IT Board Team** และ **Oracle: pegasus** ทันที
-- **Metadata Automation**: รองรับการกำหนด **Priority**, **Client**, และ **Oracle** ลงบน Master Board ทันทีที่สร้าง Issue
-- **Lean Init (v7.4)**: ระบบ Symlink คอนฟิกกลาง แทนการสร้างไฟล์ซ้ำซ้อน
-- **Org Scope (v7.5)**: รองรับการเลือก Init ระดับ User หรือ Org (เช่น itinfosv)
-- **Gateway Cross-Sync**: หากรัน Init ใน Org ระบบจะซิงค์เฉพาะ Repo ปัจจุบันกลับไปที่ User Config หลักอัตโนมัติ (Gateway Bridge)
-- **Decentralized Keywords**: ดึง Identity จากไฟล์ `CLAUDE.md` ของแต่ละ Oracle มาสร้าง Routing อัตโนมัติ
-- **Patched Indicator**: เพิ่มเครื่องหมาย `(patched 🌊 v7.6)` ใน `pulse --version`
+- **Dynamic Gateway (v7.7)**: ระบบจัดการ Gateway แบบไดนามิก ไม่มีการ Hardcode ค่าในซอร์สโค้ดอีกต่อไป
+- **Integrated Init**: `pulse init` ในโหมด Org จะถามข้อมูล Gateway (Repo, Oracle, Client, Priority) และบันทึกลงใน `pulse.config.json` ให้โดยอัตโนมัติ
+- **Smart Add Routing**: คำสั่ง `pulse add org` จะอ่านค่าคอนฟิกจากไฟล์โดยตรง ทำให้รองรับ Human หลายคนที่มี Gateway ต่างกันได้อย่างสมบูรณ์
+- **Comprehensive Patch**: รวมความสามารถจาก v7.5 (Org Scope) และ v7.6 (Advanced Syntax) ไว้ในตัวเดียว
+- **Patched Indicator**: อัปเดตเป็น `(patched 🌊 v7.7)` ใน `pulse --version`
 
 ---
 
@@ -63,10 +60,10 @@ chmod +x bin/oracle-patch
 1. **Patch**: `./bin/oracle-patch pulse-cli [path_to_pulse_cli]`
 2. **Init**: `pulse init` ในโฟลเดอร์โครงการ
    - เลือกระดับ User สำหรับโครงการส่วนตัว
-   - เลือกระดับ Org สำหรับโครงการทีม (ระบบจะสร้าง Gateway เชื่อมกับ User ให้อัตโนมัติ)
+   - เลือกระดับ Org สำหรับโครงการทีม (ถามข้อมูล Gateway อัตโนมัติ v7.7)
 3. **Add Task**:
-   - `pulse add "หัวข้อ" "รายละเอียด"` (Syntax ใหม่ v7.6)
-   - `pulse add org "หัวข้อ"` (ส่งงานเข้า Gateway/Pegasus ทันที)
+   - `pulse add "หัวข้อ" "รายละเอียด"` (Syntax ใหม่ v7.7)
+   - `pulse add org "หัวข้อ"` (ส่งงานผ่าน Dynamic Gateway ตามคอนฟิก v7.7)
 4. **Keyword Sync**: รันคำสั่งเพื่อซิงค์ตัวตนเข้าบอร์ดกลาง
    ```bash
    pulse keyword sync  # หรือ pulse kw sync
