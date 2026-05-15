@@ -85,7 +85,7 @@ add_impl = """  case "add":
 
     // Org mode defaults
     if (isOrg) {
-      if (!opts.oracle) opts.oracle = "it49072";
+      if (!opts.oracle) opts.oracle = "pegasus";
       if (!opts.priority) opts.priority = "P2";
       if (!opts.client) opts.client = "IT Board Team";
       if (!opts.repo) opts.repo = "itinfosv/it49072-oracle";
@@ -118,23 +118,23 @@ if 'setFieldOnItem' not in content:
     content = content.replace('import { gh,', 'import { gh, setFieldOnItem,')
 
 # Target Repo Logic for Cross-Org
-content = content.replace('if (!targetRepo) targetRepo = `${ctx.org}/pulse-oracle`;', 
-                         'if (targetRepo && !targetRepo.includes("/")) targetRepo = `${ctx.org}/${targetRepo}`;\n  if (!targetRepo) targetRepo = `${ctx.org}/pulse-oracle`;')
+content = content.replace('  if (!targetRepo) targetRepo = `${ctx.org}/pulse-oracle`;', 
+                         '  if (targetRepo && !targetRepo.includes("/")) targetRepo = `${ctx.org}/${targetRepo}`;\n  if (!targetRepo) targetRepo = `${ctx.org}/pulse-oracle`;')
 
 # Client Metadata Logic
 client_logic = """
-  // Set Client metadata if specified
   if (opts.client) {
-    try {
-      await setFieldOnItem(ctx, addedItemId, "Client", opts.client);
-      console.log(`Client: ${opts.client}`);
-    } catch (e) {
-      console.log(`Client: failed to set (${opts.client})`);
-    }
+    try { await setFieldOnItem(ctx, addedItemId, "Client", opts.client); console.log(`Client: ${opts.client}`); } catch (e) {}
+  }
+  if (opts.priority) {
+    try { await setFieldOnItem(ctx, addedItemId, "Priority", opts.priority); console.log(`Priority: ${opts.priority}`); } catch (e) {}
+  }
+  if (opts.oracle) {
+    try { await setFieldOnItem(ctx, addedItemId, "Oracle", opts.oracle); console.log(`Oracle: ${opts.oracle}`); } catch (e) {}
   }
 """
 if 'if (opts.client)' not in content:
-    content = content.replace('return addedItemId;', client_logic + '\n  return addedItemId;')
+    content = content.replace('  return addedItemId;', client_logic + '\n  return addedItemId;')
 
 open(path, 'w').write(content)
 PY_EOF
