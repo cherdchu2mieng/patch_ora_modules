@@ -25,13 +25,15 @@ chmod +x bin/oracle-patch
 - **Wake All Support**: แทรก logic `maw wake all` เพื่อเปิดการทำงาน Oracle ทั้งหมดในคำสั่งเดียว
 - **Patched Indicator**: เพิ่มเครื่องหมาย `(patched 🌊)` ใน `maw --version`
 
-### 2. `pulse-cli` (Pulse Management) - **v7.7 ล่าสุด**
-โมดูลสำหรับปรับปรุงระบบจัดการภารกิจ (Master Board)
-- **Dynamic Gateway (v7.7)**: ระบบจัดการ Gateway แบบไดนามิก ไม่มีการ Hardcode ค่าในซอร์สโค้ดอีกต่อไป
-- **Integrated Init**: `pulse init` ในโหมด Org จะถามข้อมูล Gateway (Repo, Oracle, Client, Priority) และบันทึกลงใน `pulse.config.json` ให้โดยอัตโนมัติ
-- **Smart Add Routing**: คำสั่ง `pulse add org` จะอ่านค่าคอนฟิกจากไฟล์โดยตรง ทำให้รองรับ Human หลายคนที่มี Gateway ต่างกันได้อย่างสมบูรณ์
-- **Comprehensive Patch**: รวมความสามารถจาก v7.5 (Org Scope) และ v7.6 (Advanced Syntax) ไว้ในตัวเดียว
-- **Patched Indicator**: อัปเดตเป็น `(patched 🌊 v7.7)` ใน `pulse --version`
+### 2. `pulse-cli` (Pulse Management) - **v7.11 ล่าสุด** 🌊
+โมดูลสำหรับปรับปรุงระบบจัดการภารกิจ (Master Board) และการรักษาความปลอดภัยของสิทธิ์
+- **Restoration & Perfection (v7.11)**: กู้คืนระบบ Org Mode และการ Routing ผ่าน Gateway ที่สูญหาย พร้อมรองรับเครื่องหมาย `#` ในคำสั่ง `set`
+- **Secure Authority (v7.10)**: ระบบตรวจสอบสิทธิ์ Orchestrator แบบ "Secure by Default" และการระบุตัวตนอัตโนมัติจาก Directory
+- **Robust Patching v1.1**: ใช้มาตรฐานการฉีดโค้ดแบบ Raw String ป้องกันปัญหา Newline Trap และความเสียหายของ Syntax
+- **Comprehensive Master Patch**: รวมความสามารถทั้งหมดตั้งแต่ v7.5 - v7.11 ไว้ในสคริปต์เดียว (Idempotent Baseline Reset)
+- **Patched Indicator**: อัปเดตเป็น `(patched 🌊 v7.11)` ใน `pulse --version`
+
+*ดูรายละเอียดการปรับปรุงทั้งหมดได้ที่ [modules/pulse-cli/HISTORY.md](modules/pulse-cli/HISTORY.md)*
 
 ---
 
@@ -59,11 +61,12 @@ chmod +x bin/oracle-patch
 ### สำหรับ Pulse (Task Orchestration)
 1. **Patch**: `./bin/oracle-patch pulse-cli [path_to_pulse_cli]`
 2. **Init**: `pulse init` ในโฟลเดอร์โครงการ
-   - เลือกระดับ User สำหรับโครงการส่วนตัว
-   - เลือกระดับ Org สำหรับโครงการทีม (ถามข้อมูล Gateway อัตโนมัติ v7.7)
-3. **Add Task**:
-   - `pulse add "หัวข้อ" "รายละเอียด"` (Syntax ใหม่ v7.7)
-   - `pulse add org "หัวข้อ"` (ส่งงานผ่าน Dynamic Gateway ตามคอนฟิก v7.7)
+   - เลือกระดับ User สำหรับโครงการส่วนตัว (ระบุ Orchestrator เพื่อสิทธิ์การจัดการ)
+   - เลือกระดับ Org สำหรับโครงการทีม (ถามข้อมูล Gateway อัตโนมัติ v7.11)
+3. **Task Management**:
+   - `pulse add "หัวข้อ"`: สร้างงานลงบอร์ดกลาง (Default: pulse-oracle)
+   - `pulse add org "หัวข้อ"`: ส่งงานผ่าน Dynamic Gateway ตามคอนฟิก (v7.11)
+   - `pulse set 39 P1 sky`: ตั้งค่าฟิลด์แบบ Auto-detect (รองรับ `#39` v7.11)
 4. **Keyword Sync**: รันคำสั่งเพื่อซิงค์ตัวตนเข้าบอร์ดกลาง
    ```bash
    pulse keyword sync  # หรือ pulse kw sync
