@@ -1,0 +1,8 @@
+# Ensure history and module files are tracked
+!HISTORY.md
+!modules/**/*.md
+!modules/**/*.sh
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
