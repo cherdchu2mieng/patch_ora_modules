@@ -15,6 +15,34 @@ cd "$PULSE_PATH"
 echo "📦 Resetting source to clean baseline..."
 git checkout HEAD -- packages/sdk/src/types.ts packages/sdk/src/github.ts packages/cli/src/config.ts packages/cli/src/commands/init.ts packages/cli/src/commands/index.ts packages/cli/src/commands/add.ts packages/cli/src/commands/scan.ts packages/cli/src/pulse.ts
 
+# 0.5 RUNTIME BACKUP (Standard v1.3)
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_ROOT="$HOME/.config/pulse/backups"
+BACKUP_DIR="$BACKUP_ROOT/patch_$TIMESTAMP"
+mkdir -p "$BACKUP_DIR"
+echo "📂 Backing up files to $BACKUP_DIR..."
+
+# List of files to be modified
+FILES=(
+  "packages/sdk/src/types.ts"
+  "packages/sdk/src/github.ts"
+  "packages/cli/src/config.ts"
+  "packages/cli/src/commands/init.ts"
+  "packages/cli/src/commands/index.ts"
+  "packages/cli/src/commands/add.ts"
+  "packages/cli/src/commands/scan.ts"
+  "packages/cli/src/pulse.ts"
+)
+
+for file in "${FILES[@]}"; do
+  if [ -f "$file" ]; then
+    mkdir -p "$BACKUP_DIR/$(dirname "$file")"
+    cp "$file" "$BACKUP_DIR/$file"
+  fi
+done
+echo "✓ Backup completed."
+
+
 # 1. SDK types.ts & github.ts
 python3 - <<'SDK_EOF'
 import os
