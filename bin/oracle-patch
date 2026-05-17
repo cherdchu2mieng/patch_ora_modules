@@ -13,4 +13,4 @@ if [ ! -f "$SCRIPT_PATH" ]; then
     echo "Error: Module script not found at $SCRIPT_PATH"
     exit 1
 fi
-bash "$SCRIPT_PATH" "$TARGET_PATH"
+bash "$SCRIPT_PATH" "$TARGET_PATH" "${@:3}"

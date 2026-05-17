@@ -11,6 +11,14 @@ Project สำหรับเก็บ Patch, เครื่องมือ (To
 chmod +x bin/oracle-patch
 ./bin/oracle-patch <module> <target_path>
 ```
+### ⏪ การกู้คืนระบบ (Restore)
+หากพบความผิดปกติหลังจากการ Patch (เช่น Syntax Error หรือโปรแกรมรันไม่ได้) ให้ใช้คำสั่ง Restore เพื่อย้อนคืนสถานะไฟล์ดั้งเดิมจากจุดสำรองล่าสุด:
+
+```bash
+./bin/oracle-patch <module> <target_path> --restore
+```
+*ระบบจะดึงไฟล์จาก ~/.config/pulse/backups/ และทำการกู้คืนให้โดยอัตโนมัติ*
+
 
 ---
 
