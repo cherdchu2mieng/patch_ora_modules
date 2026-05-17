@@ -1,6 +1,6 @@
 #!/bin/bash
-# Pulse Patch v7.8 - THE DEFINITIVE MASTER PATCH
-# Cumulative: v7.5, v7.6, v7.7 + v7.8 (Orchestrator, Gateway Ingestion, Auth)
+# Pulse Patch v7.11 - THE DEFINITIVE MASTER PATCH
+# Cumulative: v7.5 - v7.11 (Restoration, Secure Auth, Hash Prefix, Auto-Identity)
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <pulse-cli-path>"
@@ -8,7 +8,7 @@ if [ -z "$1" ]; then
 fi
 
 export PULSE_PATH=$(realpath "$1")
-echo "🌊 Applying MASTER Patch v7.8 to $PULSE_PATH..."
+echo "🌊 Applying MASTER Patch v7.11 to $PULSE_PATH..."
 
 # 0. RESET TO BASELINE
 cd "$PULSE_PATH"
@@ -316,7 +316,7 @@ content = open(path).read()
 
 # Imports & Version
 content = content.replace('import { board', 'import { getContext } from \"./config\";\nimport { board')
-content = content.replace('Pulse Oracle', 'Pulse Oracle v7.8')
+content = content.replace('Pulse Oracle', 'Pulse Oracle v7.11 (patched 🌊)')
 
 # enforceAuth helper
 auth_fn = r'''function enforceAuth() {
@@ -378,4 +378,4 @@ open(path, 'w').write(content)
 PULSE_EOF
 echo "✓ Patched CLI Entry (pulse.ts)"
 
-echo "✅ MASTER Patch v7.8 Applied successfully."
+echo "✅ MASTER Patch v7.11 Applied successfully."
