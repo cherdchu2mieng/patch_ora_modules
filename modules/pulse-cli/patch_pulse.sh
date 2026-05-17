@@ -3,12 +3,32 @@
 # Cumulative: v7.5 - v7.11 (Restoration, Secure Auth, Hash Prefix, Auto-Identity)
 
 if [ -z "$1" ]; then
-  echo "Usage: $0 <pulse-cli-path>"
+  echo "Usage: $0 <pulse-cli-path> [--restore]"
   exit 1
 fi
 
 export PULSE_PATH=$(realpath "$1")
 echo "🌊 Applying MASTER Patch v7.11 to $PULSE_PATH..."
+
+# 0.2 RESTORE LOGIC (Standard v1.5)
+if [[ "$2" == "--restore" ]]; then
+  BACKUP_ROOT="$HOME/.config/pulse/backups"
+  if [ ! -d "$BACKUP_ROOT" ]; then
+    echo "❌ Error: No backup directory found at $BACKUP_ROOT"
+    exit 1
+  fi
+  
+  LATEST_BACKUP=$(ls -td "$BACKUP_ROOT"/patch_* 2>/dev/null | head -1)
+  if [ -z "$LATEST_BACKUP" ]; then
+    echo "❌ Error: No backups found in $BACKUP_ROOT"
+    exit 1
+  fi
+  
+  echo "⏪ Restoring from latest backup: $LATEST_BACKUP..."
+  cp -rv "$LATEST_BACKUP"/* "$PULSE_PATH/"
+  echo "✅ Restoration complete. Source files returned to pre-patch state."
+  exit 0
+fi
 
 # 0. RESET TO BASELINE
 cd "$PULSE_PATH"
