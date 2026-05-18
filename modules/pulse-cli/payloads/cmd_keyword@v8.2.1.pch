@@ -1,0 +1,32 @@
+// @pulse-patch: keyword_cmd@v8.2.1
+import * as fs from 'fs';
+import * as path from 'path';
+export async function keyword(args: string[]) {
+  const sub = args[0];
+  if (sub !== "sync") { console.log("Usage: pulse keyword sync"); return; }
+  const localConfigPath = path.join(process.cwd(), 'pulse.config.json');
+  const targetPath = fs.realpathSync(localConfigPath);
+  const config = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
+  const currentRepo = path.basename(process.cwd());
+  const oracleName = config.routing?.repo?.[currentRepo];
+  if (!oracleName) { console.error(`Error: Repo '${currentRepo}' not mapped.`); return; }
+  console.log(`Syncing keywords for Oracle: ${oracleName}...`);
+  const claudePath = path.join(process.cwd(), 'CLAUDE.md');
+  const docContent = fs.readFileSync(claudePath, 'utf8');
+  let keywords: string[] = [];
+  const kwMatch = docContent.match(/\*\*Keywords\*\*:\s*([\s\S]+?)(?=\n\n|\n#|$)/);
+  if (kwMatch) {
+    const kwLines = kwMatch[1].split('\n');
+    for (const line of kwLines) {
+      const match = line.match(/^\s*-\s+(?:[^:]+:)?\s*(.+)$/);
+      if (match) { keywords.push(...match[1].split(',').map(w => w.trim())); }
+    }
+  }
+  if (!config.routing) config.routing = {};
+  if (!config.routing.keyword) config.routing.keyword = [];
+  const existingIdx = config.routing.keyword.findIndex((k: any) => k.oracle === oracleName);
+  if (existingIdx !== -1) { config.routing.keyword[existingIdx].match = keywords; }
+  else { config.routing.keyword.push({ match: keywords, oracle: oracleName }); }
+  fs.writeFileSync(targetPath, JSON.stringify(config, null, 2) + '\n');
+  console.log("Successfully updated config.");
+}

@@ -4,6 +4,20 @@ Detailed version history, requirement breakdowns, and architectural impact logs.
 
 ---
 
+## [v8.2.1] - 2026-05-18 18:30
+### 🎯 Detailed Requirement Breakdown
+1. **Ironclad v2.1 Standard Implementation**: Complete transition to manifest-driven patching.
+   - **Feature-Based Payloads**: Deployed `.pch` modules for all core features.
+   - **Internal Tracking (Manifest Tags)**: Every modified artifact contains `// @pulse-patch:` header.
+   - **Sequential Orchestrator**: Refactored `patch_pulse.sh` with check-switches and manifest management.
+2. **Command: pulse done <ID>**: Implementation of Requirement 4 (Bidirectional closing).
+   - **Affected**: done.ts (New), index.ts (Registry)
+3. **Command: pulse go <ID>**: Implementation of Requirement 3 (Sync status to In Progress).
+   - **Affected**: go.ts (New), index.ts (Registry)
+4. **Enhanced Authorization**: Refined `enforceAuth()` logic with manifest tracking.
+
+---
+
 ## [v8.2] - 2026-05-18 2026-05-18 11:15
 ### 🎯 Detailed Requirement Breakdown
 1. **Command: pulse task <ID>**: Enable pulling assigned tasks from the Master Board into local repositories.
