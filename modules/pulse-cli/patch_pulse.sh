@@ -1,6 +1,9 @@
 #!/bin/bash
-# Pulse Patch v8.3 - THE DEFINITIVE MASTER PATCH (Architecture v3.0)
-# Cumulative: v7.5 - v8.3 (Decoupled Payloads, Status Sync, Task Pulling, Restoration)
+# Pulse Patch v8.3 - THE DEFINITIVE MASTER PATCH (Ironclad v2.0)
+# Cumulative Features: 
+#   [v8.1] Centralized Board Authority
+#   [v8.2] Secure Orchestrator Guard & Task Pulling
+#   [v8.3] Bidirectional Status Sync (pulse go)
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <pulse-cli-path> [--restore]"
@@ -9,9 +12,8 @@ fi
 
 export PULSE_PATH=$(realpath "$1")
 export PAYLOAD_DIR="$(dirname "$0")/payloads"
-echo "🌊 Applying MASTER Patch v8.3 (Architecture v3.0) to $PULSE_PATH..."
+echo "🌊 Applying MASTER Patch v8.3 (Ironclad v2.0) to $PULSE_PATH..."
 
-# 0.2 RESTORE LOGIC
 if [[ "$2" == "--restore" ]]; then
   BACKUP_ROOT="$HOME/.config/pulse/backups"
   LATEST_BACKUP=$(ls -td "$BACKUP_ROOT"/patch_* 2>/dev/null | head -1)
@@ -23,7 +25,6 @@ if [[ "$2" == "--restore" ]]; then
   fi
 fi
 
-# 0. RESET & BACKUP
 cd "$PULSE_PATH"
 git checkout HEAD -- packages/sdk/src/types.ts packages/sdk/src/github.ts packages/cli/src/config.ts packages/cli/src/commands/init.ts packages/cli/src/commands/index.ts packages/cli/src/commands/add.ts packages/cli/src/commands/scan.ts packages/cli/src/pulse.ts 2>/dev/null
 
@@ -33,34 +34,30 @@ mkdir -p "$BACKUP_DIR"
 cp packages/sdk/src/types.ts packages/sdk/src/github.ts packages/cli/src/config.ts packages/cli/src/commands/init.ts packages/cli/src/commands/index.ts packages/cli/src/commands/add.ts packages/cli/src/commands/scan.ts packages/cli/src/pulse.ts "$BACKUP_DIR/" 2>/dev/null
 echo "📂 Backup created at $BACKUP_DIR"
 
-# ---------------------------------------------------------
-# 1. SDK & CONFIG
-# ---------------------------------------------------------
-python3 - <<'EOF'
+python3 - <<"EOF_PY"
 import os, re
-path_t = os.path.join(os.environ['PULSE_PATH'], 'packages/sdk/src/types.ts')
+path_t = os.path.join(os.environ["PULSE_PATH"], "packages/sdk/src/types.ts")
 content_t = open(path_t).read()
-if 'gateway?:' not in content_t:
-    content_t = content_t.replace('projectNumber: number;', 'projectNumber: number;\n  gateway?: { repo: string; oracle: string; client: string; priority: string };\n  orchestrator?: string;')
-open(path_t, 'w').write(content_t)
+if "gateway?:" not in content_t:
+    content_t = content_t.replace("projectNumber: number;", "projectNumber: number;\n  gateway?: { repo: string; oracle: string; client: string; priority: string };\n  orchestrator?: string;")
+open(path_t, "w").write(content_t)
 
-path_g = os.path.join(os.environ['PULSE_PATH'], 'packages/sdk/src/github.ts')
+path_g = os.path.join(os.environ["PULSE_PATH"], "packages/sdk/src/github.ts")
 content_g = open(path_g).read()
-if 'export async function setFieldOnItem' not in content_g:
-    content_g = content_g.replace('async function setFieldOnItem', 'export async function setFieldOnItem')
-open(path_g, 'w').write(content_g)
+if "export async function setFieldOnItem" not in content_g:
+    content_g = content_g.replace("async function setFieldOnItem", "export async function setFieldOnItem")
+open(path_g, "w").write(content_g)
 
-path_c = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/config.ts')
+path_c = os.path.join(os.environ["PULSE_PATH"], "packages/cli/src/config.ts")
 content_c = open(path_c).read()
-if 'orchestrator?: string;' not in content_c:
-    content_c = content_c.replace('oracleRepos: Record<string, string>;', 'oracleRepos: Record<string, string>;\n  orchestrator?: string;\n  gateway?: { repo: string; oracle: string; client: string; priority: string };')
-content_c = re.sub(r'return \{ org: cfg\.org, projectNumber: cfg\.projectNumber.*? \};', 
-                 'return { org: cfg.org, projectNumber: cfg.projectNumber, gateway: cfg.gateway, orchestrator: cfg.orchestrator };', content_c)
-if 'export function getCurrentOracle' not in content_c:
+if "orchestrator?: string;" not in content_c:
+    content_c = content_c.replace("oracleRepos: Record<string, string>;", "oracleRepos: Record<string, string>;\n  orchestrator?: string;\n  gateway?: { repo: string; oracle: string; client: string; priority: string };")
+content_c = re.sub(r"return \{ org: cfg\.org, projectNumber: cfg\.projectNumber.*? \};", "return { org: cfg.org, projectNumber: cfg.projectNumber, gateway: cfg.gateway, orchestrator: cfg.orchestrator };", content_c)
+if "export function getCurrentOracle" not in content_c:
     func = r"""
 export function getCurrentOracle(): string | undefined {
   if (process.env.ORACLE_NAME) return process.env.ORACLE_NAME.toLowerCase();
-  const currentFolder = require('path').basename(process.cwd()).toLowerCase();
+  const currentFolder = require("path").basename(process.cwd()).toLowerCase();
   const repos = loadConfig().oracleRepos;
   for (const [oracle, repo] of Object.entries(repos)) {
     if (repo.toLowerCase() === currentFolder) return oracle.toLowerCase();
@@ -68,103 +65,74 @@ export function getCurrentOracle(): string | undefined {
   return undefined;
 }
 """
-    content_c = content_c.replace('export function getAllContexts()', func + '\nexport function getAllContexts()')
-open(path_c, 'w').write(content_c)
-EOF
+    content_c = content_c.replace("export function getAllContexts()", func + "\nexport function getAllContexts()")
+open(path_c, "w").write(content_c)
+EOF_PY
 
-# ---------------------------------------------------------
-# 2. DECOUPLED PAYLOADS
-# ---------------------------------------------------------
-
-# A. Command Index
-python3 - <<'EOF'
+python3 - <<"EOF_PY"
 import os
-path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/index.ts')
-payload_dir = os.environ['PAYLOAD_DIR']
+path = os.path.join(os.environ["PULSE_PATH"], "packages/cli/src/commands/index.ts")
 content = open(path).read()
-if 'export { go }' not in content:
-    content += open(os.path.join(payload_dir, 'index_export.v8.3.pch')).read()
-if 'export { task }' not in content:
-    content += 'export { task } from "./task";\n'
-if 'export { keyword }' not in content:
-    content += 'export { keyword } from "./keyword";\n'
-open(path, 'w').write(content)
-EOF
+for cmd in ["go", "task", "keyword"]:
+    line = f"export {{ {cmd} }} from \"./{cmd}\";\n"
+    if line not in content: content += line
+open(path, "w").write(content)
+EOF_PY
 
-# B. add.ts Logic
-python3 - <<'EOF'
-import os, re
-path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/add.ts')
-payload_dir = os.environ['PAYLOAD_DIR']
-content = open(path).read()
-
-# Imports
-if 'setFieldOnItem' not in content: content = content.replace('import { gh,', 'import { gh, setFieldOnItem,')
-if 'getCurrentOracle' not in content: content = content.replace('import { getContext, getOracleRepos } from "../config";', 'import { getContext, getOracleRepos, getCurrentOracle } from "../config";')
-
-# Authority Logic
-auth_payload = open(os.path.join(payload_dir, 'add_authority.v8.3.pch')).read()
-if 'const currentOracle' not in content:
-    content = content.replace('const oracleLower = opts.oracle?.toLowerCase();', auth_payload)
-
-# Routing Logic (v8.3 Centralization)
-routing_payload = open(os.path.join(payload_dir, 'add_routing.v8.3.pch')).read()
-# Identify the original block and replace it
-pattern = r'let targetRepo = opts\.repo;.*?if \(!targetRepo\) targetRepo = `\$\{ctx\.org\}/pulse-oracle`;'
-content = re.sub(pattern, routing_payload, content, flags=re.DOTALL)
-
-# Metadata Logic
-meta_payload = open(os.path.join(payload_dir, 'add_metadata.v8.3.pch')).read()
-if 'if (opts.client)' not in content:
-    content = content.replace('return addedItemId;', meta_payload + '\n  return addedItemId;')
-
-open(path, 'w').write(content)
-EOF
-
-# C. Command Implementations
-cp "$PAYLOAD_DIR/go.v8.3.pch" "$PULSE_PATH/packages/cli/src/commands/go.ts"
-
-# D. pulse.ts (Entry Case)
-python3 - <<'EOF'
+python3 - <<"EOF_PY"
 import os
-path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/pulse.ts')
-payload_dir = os.environ['PAYLOAD_DIR']
+path = os.path.join(os.environ["PULSE_PATH"], "packages/cli/src/pulse.ts")
 content = open(path).read()
-payload = open(os.path.join(payload_dir, 'pulse_case.v8.3.pch')).read()
-
-if 'case "go":' in content:
-    content = content.replace('  case "go":', '  case "start_alias":')
-
-if 'case "activate":' not in content:
-    content = content.replace('case "set":', payload + '  case "set":')
-
-if 'function enforceAuth()' not in content:
-    auth_fn = r'''function enforceAuth() {
-  const current = (require("./config")).getCurrentOracle();
-  const orchestrator = (require("./config")).getContext().orchestrator;
+content = content.replace("Pulse Oracle", "Pulse Oracle v8.3 (Ironclad :wave:)")
+if "getCurrentOracle" not in content:
+    content = content.replace("import { board", "import { getContext, getCurrentOracle } from \"./config\";\nimport { board")
+if "function enforceAuth()" not in content:
+    auth_fn = r"""function enforceAuth() {
+  const current = getCurrentOracle();
+  const orchestrator = getContext().orchestrator;
   if (orchestrator && current !== orchestrator) {
     console.error("Only the designated Orchestrator can perform board management.");
     process.exit(1);
   }
-}'''
-    content = content.replace('const [cmd, ...args]', auth_fn + '\n\nconst [cmd, ...args]')
+}"""
+    content = content.replace("const [cmd, ...args]", auth_fn + "\n\nconst [cmd, ...args]")
+if "case \"task\":" not in content:
+    content = content.replace("case \"set\":", "  case \"task\":\n  case \"tk\": {\n    const { task } = require(\"./commands/index\");\n    if (!args[0]) { console.error(\"Usage: pulse task <ID>\"); process.exit(1); }\n    await task(parseInt(args[0]));\n    break;\n  }\n  case \"set\":")
+if "case \"go\":" in content: content = content.replace("  case \"go\":", "  case \"start_alias\":")
+if "case \"activate\":" not in content:
+    content = content.replace("case \"set\":", "  case \"go\":\n  case \"activate\": {\n    const { go } = require(\"./commands/index\");\n    if (!args[0] || args[0].startsWith(\"--\")) { console.error(\"Usage: pulse go <ID>\"); process.exit(1); }\n    await go(parseInt(args[0]));\n    break;\n  }\n  case \"set\":")
+content = content.replace("case \"set\":\n  case \"s\":", "case \"set\":\n  case \"s\":\n    enforceAuth();")
+content = content.replace("case \"triage\":\n  case \"tr\":", "case \"triage\":\n  case \"tr\":\n    enforceAuth();")
+open(path, "w").write(content)
+EOF_PY
 
-open(path, 'w').write(content)
-EOF
+python3 - <<"EOF_PY"
+import os, re
+path = os.path.join(os.environ["PULSE_PATH"], "packages/cli/src/commands/add.ts")
+payload_dir = os.environ["PAYLOAD_DIR"]
+content = open(path).read()
+auth_pch = open(os.path.join(payload_dir, "add_authority.pch")).read()
+rout_pch = open(os.path.join(payload_dir, "add_routing.pch")).read()
+meta_pch = open(os.path.join(payload_dir, "add_metadata.pch")).read()
+if "getCurrentOracle" not in content:
+    content = content.replace("import { getContext, getOracleRepos } from \"../config\"", "import { getContext, getOracleRepos, getCurrentOracle } from \"../config\"")
+if "setFieldOnItem" not in content: content = content.replace("import { gh,", "import { gh, setFieldOnItem,")
+if "const currentOracle" not in content: content = content.replace("const oracleLower = opts.oracle?.toLowerCase();", auth_pch)
+pattern = r"let targetRepo = opts\\.repo;.*?if \\(!targetRepo\\) targetRepo = `\\\$\{ctx\\.org\\}/pulse-oracle`;"
+content = re.sub(pattern, rout_pch, content, flags=re.DOTALL)
+if "if (opts.client)" not in content: content = content.replace("return addedItemId;", meta_pch + "\n  return addedItemId;")
+open(path, "w").write(content)
+EOF_PY
 
-# ---------------------------------------------------------
-# 3. SYNTAX GUARD
-# ---------------------------------------------------------
+cp "$PAYLOAD_DIR/go_status_sync.pch" "$PULSE_PATH/packages/cli/src/commands/go.ts"
+cp "$PAYLOAD_DIR/task_pulling.pch" "$PULSE_PATH/packages/cli/src/commands/task.ts"
+
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
-bun build packages/cli/src/pulse.ts --target bun --outdir /tmp/pulse-check > /tmp/pulse-error.log 2>&1
+bun build packages/cli/src/pulse.ts --target bun --outdir /tmp/pulse-check > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-  echo "❌ Syntax Guard FAILED! Error in patched files."
-  cat /tmp/pulse-error.log | head -n 20
-  echo "⏪ Rolling back..."
-  cp -rv "$BACKUP_DIR"/* "$PULSE_PATH/"
+  echo "❌ Syntax Guard FAILED! Regression detected."
   exit 1
 fi
 echo "✅ Syntax Guard PASSED."
-
 echo "✅ MASTER Patch v8.3 Applied successfully."
