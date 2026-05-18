@@ -1,0 +1,7 @@
+async function getGHUser(): Promise<string> {
+  try {
+    const { gh } = require("@pulse-oracle/sdk");
+    const userJson = await gh("api", "user", "-q", ".login");
+    return userJson.trim();
+  } catch (e) { return ""; }
+}
