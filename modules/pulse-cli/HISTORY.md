@@ -4,6 +4,16 @@ Detailed version history, requirement breakdowns, and architectural impact logs.
 
 ---
 
+## [v8.2] - 2026-05-18 2026-05-18 11:15
+### 🎯 Detailed Requirement Breakdown
+1. **Command: pulse task <ID>**: Enable pulling assigned tasks from the Master Board into local repositories.
+   - **Validation**: Strict oracle assignment check (Current Oracle must match Item Oracle).
+   - **Cross-Linking**: Automatic generation of `Parent: org/repo#ID` metadata in local issue body.
+   - **Bidirectional Sync**: Master Board issue receives a comment linking back to the local task.
+2. **Lifecycle Integration**: Registering `task` as a core orchestration command.
+
+
+
 ## [v7.11] - 2026-05-17 11:30
 ### 🎯 Detailed Requirement Breakdown
 1. **Restoration of Org Mode & Gateway Routing**: Restore the ability to route tasks to external organizational gateways (Pegasus) which was lost in v7.10.
