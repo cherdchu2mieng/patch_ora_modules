@@ -4,6 +4,16 @@ Detailed version history, requirement breakdowns, and architectural impact logs.
 
 ---
 
+## [v8.3] - 2026-05-18 (Draft)
+### 🎯 Detailed Requirement Breakdown
+1. **Command: pulse go <ID>**: Transition local tasks to "In Progress" with automatic Master Board synchronization.
+   - **Local Sync**: Updates the local project board status.
+   - **Cross-Link Discovery**: Scans the issue body for `Parent: ...#ID` metadata.
+   - **Master Sync**: Automatically updates the status of the Parent Issue on the Master Board to "In Progress".
+2. **Architecture v2.0 refinement**: Formalized bidirectional state tracking in the orchestration lifecycle.
+
+
+
 ## [v8.2] - 2026-05-18 2026-05-18 11:15
 ### 🎯 Detailed Requirement Breakdown
 1. **Command: pulse task <ID>**: Enable pulling assigned tasks from the Master Board into local repositories.
