@@ -1,4 +1,8 @@
 // @pulse-patch: command_cases@v8.2.2
+  case "board":
+  case "b":
+    await board(args[0]);
+    break;
   case "keyword":
   case "kw": {
     const { keyword } = require("./commands/index");
