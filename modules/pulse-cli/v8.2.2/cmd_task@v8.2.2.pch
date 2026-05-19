@@ -1,4 +1,4 @@
-// @pulse-patch: task_cmd@v8.2.1
+// @pulse-patch: task_cmd@v8.2.2
 import { gh, getItems, ensureLabel } from "@pulse-oracle/sdk";
 import { getContext, getCurrentOracle } from "../config";
 
@@ -24,9 +24,11 @@ export async function task(masterItemIndex: number): Promise<string | undefined>
   
   try {
     const existingLocal = await gh("issue", "list", "--repo", `${ctx.org}/${currentRepo}`, "--search", `"${searchPattern}"`, "--json", "number");
-    if (JSON.parse(existingLocal).length > 0) {
-       console.error(`❌ Error: Item #${masterItemIndex} already has a local cross-linked issue in this repository.`);
-       return;
+    const json = JSON.parse(existingLocal);
+    if (json.length > 0) {
+       const existingId = json[0].number;
+       console.log(`ℹ️ Item #${masterItemIndex} already has a local cross-linked issue: #${existingId}`);
+       return String(existingId);
     }
   } catch (e) {}
 
