@@ -32,6 +32,7 @@ FILES=(
   "packages/sdk/src/types.ts"
   "packages/sdk/src/github.ts"
   "packages/cli/src/config.ts"
+  "packages/cli/src/commands/init.ts"
   "packages/cli/src/commands/index.ts"
   "packages/cli/src/commands/add.ts"
   "packages/cli/src/pulse.ts"
@@ -50,7 +51,7 @@ function apply_payload() {
   local feature="$2"
   local anchor="$3"
   local payload_name="$4"
-  local mode="${5:-replace}" # replace or append
+  local mode="${5:-replace}" # replace, append, or overwrite
 
   echo "🛠️  Checking $feature in $(basename "$target_file")..."
   
@@ -68,7 +69,7 @@ with open(path, 'r') as f:
     content = f.read()
 
 tag = "$feature"
-if f"// @pulse-patch: {tag}" in content:
+if f"@pulse-patch:" in content and tag in content.split("@pulse-patch:")[1].split("\n")[0]:
     print(f"  ✅ {tag} already present.")
     sys.exit(0)
 
@@ -101,8 +102,10 @@ if '$mode' == 'replace':
     if anchor in content:
         content = content.replace(anchor, payload + "\n" + anchor)
     else:
-        print(f"  ❌ Error: Anchor not found in {target_file}")
+        print(f"  ❌ Error: Anchor not found in {path}")
         sys.exit(1)
+elif '$mode' == 'overwrite':
+    content = payload
 elif '$mode' == 'append':
     content = content.rstrip() + "\n" + payload + "\n"
 
@@ -120,25 +123,28 @@ PY_EOF
 # 3. SEQUENTIAL PATCHING
 # SDK
 apply_payload "packages/sdk/src/types.ts" "sdk_types@v8.2.1" "projectNumber: number;" "sdk_types@v8.2.1.pch" "replace"
-apply_payload "packages/sdk/src/github.ts" "sdk_github_export@v8.2.1" "async function setFieldOnItem" "sdk_github_export@v8.2.1.pch" "replace"
+apply_payload "packages/sdk/src/github.ts" "sdk_github_export@v8.2.1" "export async function setFieldOnItem" "sdk_github_export@v8.2.1.pch" "swap"
 
 # Config
 apply_payload "packages/cli/src/config.ts" "config_interface@v8.2.1" "oracleRepos: Record<string, string>;" "config_interface@v8.2.1.pch" "replace"
 apply_payload "packages/cli/src/config.ts" "config_get_current_oracle@v8.2.1" "export function getAllContexts()" "config_get_current_oracle@v8.2.1.pch" "replace"
 apply_payload "packages/cli/src/config.ts" "config_get_context_return@v8.2.1" "return { org: cfg.org, projectNumber: cfg.projectNumber" "config_get_context_return@v8.2.1.pch" "replace"
 
+# Init
+apply_payload "packages/cli/src/commands/init.ts" "init_org_mode@v8.2.1" "export async function init()" "init_org_mode@v8.2.1.pch" "overwrite"
+
 # Add Command
-apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.2.1" "import { getContext, getOracleRepos } from \"../config\";" "add_imports@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/commands/add.ts" "add_current_oracle_check@v8.2.1" "const oracleLower = opts.oracle?.toLowerCase();" "add_current_oracle_check@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/commands/add.ts" "add_routing_logic@v8.2.1" "let targetRepo = opts.repo;" "add_routing_logic@v8.2.1.pch" "replace"
+apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.2.1" "import { getContext, getOracleRepos" "add_imports@v8.2.1.pch" "replace"
+apply_payload "packages/cli/src/commands/add.ts" "add_current_oracle_check@v8.2.1" "const oracleLower = opts.oracle?.toLowerCase();" "add_current_oracle_check@v8.2.1.pch" "swap"
+apply_payload "packages/cli/src/commands/add.ts" "add_routing_logic@v8.2.1" "let targetRepo = opts.repo;" "add_routing_logic@v8.2.1.pch" "swap"
 apply_payload "packages/cli/src/commands/add.ts" "add_field_updates@v8.2.1" "return addedItemId;" "add_field_updates@v8.2.1.pch" "replace"
 
 # Pulse Entry
 apply_payload "packages/cli/src/pulse.ts" "pulse_imports@v8.2.1" "import { board" "pulse_imports@v8.2.1.pch" "replace"
 apply_payload "packages/cli/src/pulse.ts" "pulse_enforce_auth@v8.2.1" "const [cmd, ...args]" "pulse_enforce_auth@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_set@v8.2.1" "case \"set\":\n  case \"s\":" "pulse_auth_call@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_triage@v8.2.1" "case \"triage\":\n  case \"tr\":" "pulse_auth_call@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_command_cases@v8.2.1" "case \"set\":" "pulse_command_cases@v8.2.1.pch" "replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_set@v8.2.1" "if (!args[0] || !args[1]) {" "pulse_auth_call@v8.2.1.pch" "replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_triage@v8.2.1" "await triage();" "pulse_auth_call@v8.2.1.pch" "replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_command_cases@v8.2.1" "case \"board\":" "pulse_command_cases@v8.2.1.pch" "replace"
 apply_payload "packages/cli/src/pulse.ts" "pulse_version_string@v8.2.1" "Pulse Oracle" "pulse_version_string@v8.2.1.pch" "replace"
 
 # 4. COMMAND REGISTRY (New Files)

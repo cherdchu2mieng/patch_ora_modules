@@ -2,6 +2,13 @@
 
 Detailed version history, requirement breakdowns, and architectural impact logs.
 
+## [v8.2.1-stable] - 2026-05-19
+### 🏁 Status: Tested from human = Sacred 🛡️
+- **Pulse Init**: Fully stabilized User/Org scopes, interactive discovery, and dynamic gateway cross-sync.
+- **Keyword Sync**: Robust extraction from CLAUDE.md with standard routing array alignment.
+- **Governance**: Stability Protocol established and distributed across workspace metadata.
+
+
 ---
 
 ## [v8.2.1] - 2026-05-18 18:30

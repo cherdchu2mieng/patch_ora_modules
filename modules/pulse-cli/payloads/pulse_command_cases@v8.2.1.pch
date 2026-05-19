@@ -1,3 +1,9 @@
+  case "keyword":
+  case "kw": {
+    const { keyword } = require("./commands/index");
+    await keyword(args);
+    break;
+  }
   case "task":
   case "tk": {
     const { task } = require("./commands/index");
