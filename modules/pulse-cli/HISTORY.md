@@ -2,6 +2,13 @@
 
 Detailed version history, requirement breakdowns, and architectural impact logs.
 
+## [v8.2.2] - 2026-05-19
+### 🏁 Status: Pending Human Verification
+- **Enhanced Visualization**: Responsive 9-column board with advanced filtering by Oracle, Client, Priority, or Status.
+- **Compound Lifecycle**: Added `pulse start` which sequentially executes `pulse task` (Pull & Anchor) and `pulse go` (Set In Progress).
+- **Symmetrical Closure**: `pulse close` (formerly `done`) now closes local issues, syncs Master Board status, and provides cleanup advice.
+- **Governance Triage**: Locked `pulse tr` to the designated Orchestrator and implemented bidirectional status synchronization.
+
 ## [v8.2.1-stable] - 2026-05-19
 ### 🏁 Status: Tested from human = Sacred 🛡️
 - **Pulse Init**: Fully stabilized User/Org scopes, interactive discovery, and dynamic gateway cross-sync.

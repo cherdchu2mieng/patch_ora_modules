@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pulse Patch Orchestrator v8.2.1 (Ironclad v2.1)
+# Pulse Patch Orchestrator v8.2.2 (Ironclad v2.1)
 # Sequential, Manifest-Driven, Idempotent
 
 if [ -z "$1" ]; then
@@ -9,7 +9,7 @@ fi
 
 export PULSE_PATH=$(realpath "$1")
 export PAYLOADS_DIR="$(dirname "$0")/payloads"
-echo "🌊 Applying MASTER Patch v8.2.1 (Ironclad v2.1) to $PULSE_PATH..."
+echo "🌊 Applying MASTER Patch v8.2.2 (Ironclad v2.1) to $PULSE_PATH..."
 
 # 0. RESTORE LOGIC
 if [[ "$2" == "--restore" ]]; then
@@ -35,6 +35,8 @@ FILES=(
   "packages/cli/src/commands/init.ts"
   "packages/cli/src/commands/index.ts"
   "packages/cli/src/commands/add.ts"
+  "packages/cli/src/commands/board.ts"
+  "packages/cli/src/commands/triage.ts"
   "packages/cli/src/pulse.ts"
 )
 
@@ -51,7 +53,7 @@ function apply_payload() {
   local feature="$2"
   local anchor="$3"
   local payload_name="$4"
-  local mode="${5:-replace}" # replace, append, or overwrite
+  local mode="${5:-replace}" # replace, append, overwrite, swap
 
   echo "🛠️  Checking $feature in $(basename "$target_file")..."
   
@@ -104,6 +106,12 @@ if '$mode' == 'replace':
     else:
         print(f"  ❌ Error: Anchor not found in {path}")
         sys.exit(1)
+elif '$mode' == 'swap':
+    if anchor in content:
+        content = content.replace(anchor, payload)
+    else:
+        print(f"  ❌ Error: Anchor not found in {path}")
+        sys.exit(1)
 elif '$mode' == 'overwrite':
     content = payload
 elif '$mode' == 'append':
@@ -144,22 +152,26 @@ apply_payload "packages/cli/src/pulse.ts" "pulse_imports@v8.2.1" "import { board
 apply_payload "packages/cli/src/pulse.ts" "pulse_enforce_auth@v8.2.1" "const [cmd, ...args]" "pulse_enforce_auth@v8.2.1.pch" "replace"
 apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_set@v8.2.1" "if (!args[0] || !args[1]) {" "pulse_auth_call@v8.2.1.pch" "replace"
 apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_triage@v8.2.1" "await triage();" "pulse_auth_call@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_command_cases@v8.2.1" "case \"board\":" "pulse_command_cases@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_version_string@v8.2.1" "Pulse Oracle" "pulse_version_string@v8.2.1.pch" "replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_command_cases@v8.2.2" "case \"board\":" "pulse_command_cases@v8.2.2.pch" "swap"
+apply_payload "packages/cli/src/pulse.ts" "pulse_version_string@v8.2.2" "Pulse Oracle" "pulse_version_string@v8.2.1.pch" "replace"
 
-# 4. COMMAND REGISTRY (New Files)
+# 4. COMMAND REGISTRY (New/Overwritten Files)
 echo "📂 Creating command files..."
-cp "$PAYLOADS_DIR/cmd_task@v8.2.1.pch" "$PULSE_PATH/packages/cli/src/commands/task.ts"
+apply_payload "packages/cli/src/commands/board.ts" "board_v2@v8.2.2" "" "cmd_board@v8.2.2.pch" "overwrite"
+apply_payload "packages/cli/src/commands/triage.ts" "triage_cmd@v8.2.2" "" "cmd_triage@v8.2.2.pch" "overwrite"
+
+cp "$PAYLOADS_DIR/cmd_task@v8.2.2.pch" "$PULSE_PATH/packages/cli/src/commands/task.ts"
 cp "$PAYLOADS_DIR/cmd_keyword@v8.2.1.pch" "$PULSE_PATH/packages/cli/src/commands/keyword.ts"
-cp "$PAYLOADS_DIR/cmd_go@v8.2.1.pch" "$PULSE_PATH/packages/cli/src/commands/go.ts"
-cp "$PAYLOADS_DIR/cmd_done@v8.2.1.pch" "$PULSE_PATH/packages/cli/src/commands/done.ts"
+cp "$PAYLOADS_DIR/cmd_go@v8.2.2.pch" "$PULSE_PATH/packages/cli/src/commands/go.ts"
+cp "$PAYLOADS_DIR/cmd_close@v8.2.2.pch" "$PULSE_PATH/packages/cli/src/commands/close.ts"
+cp "$PAYLOADS_DIR/cmd_start@v8.2.2.pch" "$PULSE_PATH/packages/cli/src/commands/start.ts"
 
 # Register in index.ts
 python3 - <<EOF
 import os
 path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/index.ts')
 with open(path, 'r') as f: content = f.read()
-for cmd in ['keyword', 'task', 'go', 'done']:
+for cmd in ['keyword', 'task', 'go', 'close', 'start']:
     line = f'export {{ {cmd} }} from "./{cmd}";'
     if line not in content:
         content = content.strip() + f'\n{line}\n'
@@ -184,4 +196,4 @@ else
   echo "⚠️ Bun not found. Skipping automated Syntax Guard."
 fi
 
-echo "✅ MASTER Patch v8.2.1 Applied successfully."
+echo "✅ MASTER Patch v8.2.2 Applied successfully."
