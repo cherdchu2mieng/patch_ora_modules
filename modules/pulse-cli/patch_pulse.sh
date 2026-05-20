@@ -130,41 +130,41 @@ PY_EOF
 
 # 3. SEQUENTIAL PATCHING
 # SDK
-apply_payload "packages/sdk/src/types.ts" "sdk_types@v8.2.1" "projectNumber: number;" "sdk_types@v8.2.1.pch" "replace"
-apply_payload "packages/sdk/src/github.ts" "sdk_github_export@v8.2.1" "export async function setFieldOnItem" "sdk_github_export@v8.2.1.pch" "swap"
+apply_payload "packages/sdk/src/types.ts" "sdk_types@v8.2.1" "projectNumber: number;" "sdk_types@v8.2.1.pl" "replace"
+apply_payload "packages/sdk/src/github.ts" "sdk_github_export@v8.2.1" "export async function setFieldOnItem" "sdk_github_export@v8.2.1.pl" "swap"
 
 # Config
-apply_payload "packages/cli/src/config.ts" "config_interface@v8.2.1" "oracleRepos: Record<string, string>;" "config_interface@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/config.ts" "config_get_current_oracle@v8.2.1" "export function getAllContexts()" "config_get_current_oracle@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/config.ts" "config_get_context_return@v8.2.1" "return { org: cfg.org, projectNumber: cfg.projectNumber" "config_get_context_return@v8.2.1.pch" "replace"
+apply_payload "packages/cli/src/config.ts" "config_interface@v8.2.1" "oracleRepos: Record<string, string>;" "config_interface@v8.2.1.pl" "replace"
+apply_payload "packages/cli/src/config.ts" "config_get_current_oracle@v8.2.1" "export function getAllContexts()" "config_get_current_oracle@v8.2.1.pl" "replace"
+apply_payload "packages/cli/src/config.ts" "config_get_context_return@v8.2.1" "return { org: cfg.org, projectNumber: cfg.projectNumber" "config_get_context_return@v8.2.1.pl" "replace"
 
 # Init
-apply_payload "packages/cli/src/commands/init.ts" "init_org_mode@v8.2.1" "export async function init()" "init_org_mode@v8.2.1.pch" "overwrite"
+apply_payload "packages/cli/src/commands/init.ts" "init_org_mode@v8.2.1" "export async function init()" "init_org_mode@v8.2.1.pl" "overwrite"
 
 # Add Command
-apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.2.1" "import { getContext, getOracleRepos" "add_imports@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/commands/add.ts" "add_current_oracle_check@v8.2.1" "const oracleLower = opts.oracle?.toLowerCase();" "add_current_oracle_check@v8.2.1.pch" "swap"
-apply_payload "packages/cli/src/commands/add.ts" "add_routing_logic@v8.2.1" "let targetRepo = opts.repo;" "add_routing_logic@v8.2.1.pch" "swap"
-apply_payload "packages/cli/src/commands/add.ts" "add_field_updates@v8.2.1" "return addedItemId;" "add_field_updates@v8.2.1.pch" "replace"
+apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.2.1" "import { getContext, getOracleRepos" "add_imports@v8.2.1.pl" "replace"
+apply_payload "packages/cli/src/commands/add.ts" "add_current_oracle_check@v8.2.1" "const oracleLower = opts.oracle?.toLowerCase();" "add_current_oracle_check@v8.2.1.pl" "swap"
+apply_payload "packages/cli/src/commands/add.ts" "add_routing_logic@v8.2.1" "let targetRepo = opts.repo;" "add_routing_logic@v8.2.1.pl" "swap"
+apply_payload "packages/cli/src/commands/add.ts" "add_field_updates@v8.2.1" "return addedItemId;" "add_field_updates@v8.2.1.pl" "replace"
 
 # Pulse Entry
-apply_payload "packages/cli/src/pulse.ts" "pulse_imports@v8.2.1" "import { board" "pulse_imports@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_enforce_auth@v8.2.1" "const [cmd, ...args]" "pulse_enforce_auth@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_set@v8.2.1" "if (!args[0] || !args[1]) {" "pulse_auth_call@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_triage@v8.2.1" "await triage();" "pulse_auth_call@v8.2.1.pch" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_command_cases@v8.2.2" "case \"board\":" "pulse_command_cases@v8.2.2.pch" "swap"
-apply_payload "packages/cli/src/pulse.ts" "pulse_version_string@v8.2.2" "Pulse Oracle" "pulse_version_string@v8.2.1.pch" "replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_imports@v8.2.1" "import { board" "pulse_imports@v8.2.1.pl" "replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_enforce_auth@v8.2.1" "const [cmd, ...args]" "pulse_enforce_auth@v8.2.1.pl" "replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_set@v8.2.1" "if (!args[0] || !args[1]) {" "pulse_auth_call@v8.2.1.pl" "replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_triage@v8.2.1" "await triage();" "pulse_auth_call@v8.2.1.pl" "replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_command_cases@v8.2.2" "case \"board\":" "pulse_command_cases@v8.2.2.pl" "swap"
+apply_payload "packages/cli/src/pulse.ts" "pulse_version_string@v8.2.2" "Pulse Oracle" "pulse_version_string@v8.2.1.pl" "replace"
 
 # 4. COMMAND REGISTRY (New/Overwritten Files)
 echo "📂 Creating command files..."
-apply_payload "packages/cli/src/commands/board.ts" "board_v2@v8.2.2" "" "cmd_board@v8.2.2.pch" "overwrite"
-apply_payload "packages/cli/src/commands/triage.ts" "triage_cmd@v8.2.2" "" "cmd_triage@v8.2.2.pch" "overwrite"
+apply_payload "packages/cli/src/commands/board.ts" "board_v2@v8.2.2" "" "cmd_board@v8.2.2.pl" "overwrite"
+apply_payload "packages/cli/src/commands/triage.ts" "triage_cmd@v8.2.2" "" "cmd_triage@v8.2.2.pl" "overwrite"
 
-cp "$PAYLOADS_DIR/cmd_task@v8.2.2.pch" "$PULSE_PATH/packages/cli/src/commands/task.ts"
-cp "$PAYLOADS_DIR/cmd_keyword@v8.2.1.pch" "$PULSE_PATH/packages/cli/src/commands/keyword.ts"
-cp "$PAYLOADS_DIR/cmd_go@v8.2.2.pch" "$PULSE_PATH/packages/cli/src/commands/go.ts"
-cp "$PAYLOADS_DIR/cmd_close@v8.2.2.pch" "$PULSE_PATH/packages/cli/src/commands/close.ts"
-cp "$PAYLOADS_DIR/cmd_start@v8.2.2.pch" "$PULSE_PATH/packages/cli/src/commands/start.ts"
+cp "$PAYLOADS_DIR/cmd_task@v8.2.2.pl" "$PULSE_PATH/packages/cli/src/commands/task.ts"
+cp "$PAYLOADS_DIR/cmd_keyword@v8.2.1.pl" "$PULSE_PATH/packages/cli/src/commands/keyword.ts"
+cp "$PAYLOADS_DIR/cmd_go@v8.2.2.pl" "$PULSE_PATH/packages/cli/src/commands/go.ts"
+cp "$PAYLOADS_DIR/cmd_close@v8.2.2.pl" "$PULSE_PATH/packages/cli/src/commands/close.ts"
+cp "$PAYLOADS_DIR/cmd_start@v8.2.2.pl" "$PULSE_PATH/packages/cli/src/commands/start.ts"
 
 # Register in index.ts
 python3 - <<EOF
