@@ -31,6 +31,8 @@ echo "📂 Backup: $BACKUP_DIR"
 FILES=(
   "packages/cli/src/pulse.ts"
   "packages/cli/src/commands/add.ts"
+  "packages/cli/src/commands/board.ts"
+  "packages/cli/src/commands/triage.ts"
 )
 
 for f in "${FILES[@]}"; do
@@ -147,6 +149,11 @@ apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "import { 
 apply_payload "packages/cli/src/commands/add.ts" "add_config_logic@v8.4.0" "const ctx = getContext();" "add_config_logic@v8.4.0.pl"
 apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return addedItemId;" "add_field_sync@v8.4.0.pl"
 apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" '  case "set":'
+
+# 4. SEQUENTIAL PATCHING (CR-002)
+apply_payload "packages/cli/src/commands/board.ts" "board_config_check@v8.4.0" "const allItems =" "board_config_check@v8.4.0.pl"
+apply_payload "packages/cli/src/commands/triage.ts" "triage_config_check@v8.4.0" "const items =" "triage_config_check@v8.4.0.pl"
+apply_payload "packages/cli/src/commands/triage.ts" "triage_authority_gate@v8.4.0" "const items =" "triage_authority_gate@v8.4.0.pl"
 
 # 5. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
