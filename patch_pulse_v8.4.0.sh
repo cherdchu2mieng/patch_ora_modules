@@ -33,6 +33,7 @@ FILES=(
   "packages/cli/src/commands/add.ts"
   "packages/cli/src/commands/board.ts"
   "packages/cli/src/commands/triage.ts"
+  "packages/cli/src/config.ts"
 )
 
 for f in "${FILES[@]}"; do
@@ -145,6 +146,10 @@ PY_EOF
     exit 1
   fi
 }
+
+# 2.5 CORE INFRASTRUCTURE
+apply_payload "packages/cli/src/config.ts" "config_orchestrator_field@v8.4.0" "  repoName?: string;" "config_orchestrator_field@v8.4.0.pl"
+apply_payload "packages/cli/src/config.ts" "config_get_current_oracle@v8.2.1" "export function getContext()" "config_get_current_oracle@v8.2.1.pl"
 
 # 3. SEQUENTIAL PATCHING (CR-001)
 apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "import { gh," "add_imports@v8.4.0.pl" "replace_line"
