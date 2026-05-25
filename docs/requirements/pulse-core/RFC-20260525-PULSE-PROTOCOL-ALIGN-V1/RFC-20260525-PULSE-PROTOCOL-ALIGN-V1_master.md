@@ -32,7 +32,7 @@
 | CR ID | Module | Technical Objective | Detail File | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | CR-PULSE-ALIGN-001 | Command: add | Implement board-specific defaults & mandatory 'New' status | [CR-PULSE-ALIGN-001_detail.md] | Verified 🛡️ |
-| CR-PULSE-ALIGN-002 | Command: board/tr | Ensure context-aware visualization & Triage authority gates | [TBD] | Pending |
+| CR-PULSE-ALIGN-002 | Command: board/tr | Ensure context-aware visualization & Triage authority gates | [CR-PULSE-ALIGN-002_detail.md] | Verified 🛡️ |
 | CR-PULSE-ALIGN-003 | Command: set/start | Enforce Orchestrator/Actor authority & auto-client updates | [TBD] | Pending |
 | CR-PULSE-ALIGN-004 | Command: och | Implement Direct Ingress Pattern (New command) | [TBD] | Pending |
 | CR-PULSE-ALIGN-005 | Command: gw | Implement Dual-Mode Gateway (Return/Broadcast) | [TBD] | Pending |

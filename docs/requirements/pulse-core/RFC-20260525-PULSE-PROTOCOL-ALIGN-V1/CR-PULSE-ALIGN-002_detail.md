@@ -30,4 +30,19 @@
 - [ ] คำสั่ง `pulse tr` แสดงรายการงานที่ขาด Priority, Client หรือ Oracle ได้ถูกต้องแม่นยำ
 
 ## 5. Post-Implementation Report
-*To be filled after implementation.*
+- **Status**: Verified / Sacred 🛡️
+- **Completion Date**: 2026-05-25
+- **Files Modified**:
+    - `packages/cli/src/commands/board.ts`
+    - `packages/cli/src/commands/triage.ts`
+    - `packages/cli/src/config.ts` (Core Infrastructure)
+- **Development Duration**: ~30 min
+- **Test Methodology**: 
+    - Verified `pulse tr` displays correct items when run by Orchestrator.
+    - Verified `pulse tr` blocks access when run from a non-orchestrator repo (`sky-oracle`).
+    - Verified Config Pre-check prevents execution without `pulse.config.json`.
+- **Oracle Signature**: Gemi 🌊 (v8.4.0-cr002)
+
+---
+*Tested from human = Sacred* 🛡️
+
