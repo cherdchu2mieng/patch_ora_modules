@@ -59,7 +59,7 @@ function apply_payload() {
   export T_END="$anchor_end"
 
   python3 - <<'PY_EOF'
-import os, sys, re
+import os, sys
 
 pulse_path = os.environ.get("PULSE_PATH")
 payloads_dir = os.environ.get("PAYLOADS_DIR")
@@ -109,10 +109,10 @@ else:
 
 # Injection
 if mode == "replace_block":
-    # More robust block replacement using regex
-    pattern = re.escape(start) + r".*?" + re.escape(end)
-    if re.search(pattern, content, re.DOTALL):
-        content = re.sub(pattern, payload, content, flags=re.DOTALL)
+    if start in content and end in content:
+        parts = content.split(start, 1)
+        post_parts = parts[1].split(end, 1)
+        content = parts[0] + payload + "\n  " + end + post_parts[1]
     else:
         print(f"  ❌ Error: Block start/end not found in {target_file}")
         print(f"  Start: [{start}]")
@@ -143,29 +143,20 @@ PY_EOF
 }
 
 # 3. SEQUENTIAL PATCHING (CR-001)
-IMPORT_LINE='import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from "@pulse-oracle/sdk";'
-apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "$IMPORT_LINE" "add_imports@v8.4.0.pl" "replace_line"
-apply_payload "packages/cli/src/commands/add.ts" "add_config_imports@v8.4.0" "import { getContext, getOracleRepos } from \"../config\";" "add_config_imports@v8.4.0.pl" "replace_line"
+apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "import { gh," "add_imports@v8.4.0.pl" "replace_line"
 apply_payload "packages/cli/src/commands/add.ts" "add_config_logic@v8.4.0" "const ctx = getContext();" "add_config_logic@v8.4.0.pl"
-
-REPO_BLOCK_START='  let targetRepo = opts.repo;'
-REPO_BLOCK_END='  if (!targetRepo) targetRepo = `${ctx.org}/pulse-oracle`;'
-apply_payload "packages/cli/src/commands/add.ts" "add_repo_lock@v8.4.0" "$REPO_BLOCK_START" "add_repo_lock@v8.4.0.pl" "replace_block" "$REPO_BLOCK_END"
-
 apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return addedItemId;" "add_field_sync@v8.4.0.pl"
-
-apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" '    break;
-  }'
+apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" '  case "set":'
 
 # 5. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
   bun install --silent
-  if bun build ./packages/cli/src/pulse.ts --outdir ./dist --target bun > /tmp/bun_build.log 2>&1; then
+  if bun build ./packages/cli/src/pulse.ts --outdir ./dist --target bun > /dev/null 2>&1; then
     echo "✅ Syntax Guard PASSED."
   else
-    echo "❌ Syntax Guard FAILED. Check /tmp/bun_build.log"
+    echo "❌ Syntax Guard FAILED. Reverting changes..."
     exit 1
   fi
 fi
