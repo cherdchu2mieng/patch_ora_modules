@@ -8,7 +8,7 @@ if [ -z "$1" ]; then
 fi
 
 export PULSE_PATH=$(realpath "$1")
-export PAYLOADS_DIR="$(dirname "$0")/payloads"
+export PAYLOADS_DIR="$(dirname "$0")/modules/pulse-cli/payloads"
 echo "🌊 Applying MASTER Patch v8.4.0 (Ironclad v2.2) to $PULSE_PATH..."
 
 # 0. RESTORE LOGIC
@@ -61,7 +61,7 @@ function apply_payload() {
   export T_END="$anchor_end"
 
   python3 - <<'PY_EOF'
-import os, sys
+import os, sys, re
 
 pulse_path = os.environ.get("PULSE_PATH")
 payloads_dir = os.environ.get("PAYLOADS_DIR")
@@ -82,9 +82,13 @@ if not os.path.exists(path):
 with open(path, "r") as f:
     content = f.read()
 
-if f"// @pulse-patch: {tag}" in content:
-    print(f"  ✅ {tag} already present.")
-    sys.exit(0)
+# Robust Manifest Check
+manifest_match = re.search(r"^// @pulse-patch:.*", content, re.MULTILINE)
+if manifest_match:
+    manifest_line = manifest_match.group(0)
+    if tag in manifest_line.split():
+        print(f"  ✅ {tag} already present.")
+        sys.exit(0)
 
 if not os.path.exists(payload_path):
     print(f"  ❌ Error: Payload file not found: {payload_path}")
@@ -94,11 +98,11 @@ with open(payload_path, "r") as f:
     payload = f.read().strip()
 
 # Manifest Management
-if "// @pulse-patch:" in content:
+if manifest_match:
     lines = content.split("\n")
     for i, line in enumerate(lines):
         if line.startswith("// @pulse-patch:"):
-            if tag not in line:
+            if tag not in line.split():
                 lines[i] = line.rstrip() + f" {tag}"
             break
     content = "\n".join(lines)
@@ -117,8 +121,6 @@ if mode == "replace_block":
         content = parts[0] + payload + "\n  " + end + post_parts[1]
     else:
         print(f"  ❌ Error: Block start/end not found in {target_file}")
-        print(f"  Start: [{start}]")
-        print(f"  End: [{end}]")
         sys.exit(1)
 elif mode == "replace_line":
     if start in content:
