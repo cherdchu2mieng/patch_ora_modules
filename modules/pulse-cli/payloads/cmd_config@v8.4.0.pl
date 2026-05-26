@@ -8,11 +8,16 @@ export interface PulsePeer {
   label?: string;
 }
 
+export interface OrchestratorConfig {
+  repo: string;
+  oracle: string;
+}
+
 export interface PulseConfig {
   org: string;
   projectNumber: number;
   repoName?: string;
-  orchestrator?: string;
+  orchestrator?: OrchestratorConfig;
   gateway?: { repo: string; oracle: string; client: string; priority: string };
   oracleRepos: Record<string, string>;
   routing?: RoutingConfig;
@@ -61,8 +66,9 @@ let _cached: PulseConfig | null = null;
 export function enforceAuth() {
   const current = getCurrentOracle();
   const orchestrator = getContext().orchestrator;
-  if (orchestrator && current !== orchestrator) {
-    console.error(`Only the designated Orchestrator '${orchestrator}' can perform board management (Current: ${current || 'unknown'}).`);
+  const orchestratorName = typeof orchestrator === "string" ? orchestrator : (orchestrator as any)?.oracle;
+  if (orchestratorName && current !== orchestratorName) {
+    console.error(`Only the designated Orchestrator '${orchestratorName}' can perform board management (Current: ${current || 'unknown'}).`);
     process.exit(1);
   }
 }
@@ -111,7 +117,7 @@ export function getContext(): PulseContext {
     org: cfg.org, 
     projectNumber: cfg.projectNumber, 
     gateway: cfg.gateway, 
-    orchestrator: cfg.orchestrator 
+    orchestrator: cfg.orchestrator as any
   };
 }
 

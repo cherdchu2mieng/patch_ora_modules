@@ -44,7 +44,7 @@ export async function init() {
       gateway = { repo: gRepo, oracle: gOracle };
     }
 
-    const orchestrator = (await ask(rl, "Orchestrator Oracle (e.g. gemi): ")).trim();
+    const orchestratorOracle = (await ask(rl, "Orchestrator Oracle (e.g. gemi): ")).trim();
 
     const scopeInput = await ask(rl, "\nInitialize scope: [U]ser (default) or [O]rg? (u) ");
     const isOrg = (scopeInput.trim().toLowerCase() || 'u') === 'o';
@@ -83,6 +83,16 @@ export async function init() {
       }
     }
 
+    // --- Phase 4.5: Orchestrator Object Construction ---
+    let orchestrator: any;
+    if (orchestratorOracle) {
+      const orchRepoName = oracleRepos[orchestratorOracle.toLowerCase()] || `${orchestratorOracle.toLowerCase()}-oracle`;
+      orchestrator = {
+        repo: `${effectiveOrg}/${orchRepoName}`,
+        oracle: orchestratorOracle.toLowerCase()
+      };
+    }
+
     // --- Phase 5: Construct Standard Routing Object ---
     const toDisplay = (name: string) => name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
     
@@ -104,7 +114,7 @@ export async function init() {
       org: effectiveOrg,
       projectNumber,
       oracleRepos,
-      orchestrator: orchestrator || undefined,
+      orchestrator: orchestrator,
       gateway: gateway,
       routing
     };
