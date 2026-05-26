@@ -31,6 +31,7 @@ echo "📂 Backup: $BACKUP_DIR"
 FILES=(
   "packages/cli/src/pulse.ts"
   "packages/cli/src/commands/add.ts"
+  "packages/cli/src/commands/chb.ts"
 )
 
 for f in "${FILES[@]}"; do
@@ -156,6 +157,15 @@ apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return
 
 apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" '    break;
   }'
+
+# 4. BIDIRECTIONAL SYNC & AUTHORITY (CR-004)
+AUTH_START='    // 2. Authority Check'
+AUTH_END='    // 3. Mode Selection & Execution'
+apply_payload "packages/cli/src/commands/chb.ts" "chb_authority@v8.4.1" "$AUTH_START" "chb_authority@v8.4.1.pl" "replace_block" "$AUTH_END"
+
+INGRESS_START='      // Update AIB Board'
+INGRESS_END='      // Update ITB Board (Local)'
+apply_payload "packages/cli/src/commands/chb.ts" "chb_ingress_dynamic@v8.4.1" "$INGRESS_START" "chb_ingress_dynamic@v8.4.1.pl" "replace_block" "$INGRESS_END"
 
 # 5. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
