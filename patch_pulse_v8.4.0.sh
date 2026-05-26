@@ -168,9 +168,7 @@ apply_payload "packages/cli/src/commands/triage.ts" "triage_config_check@v8.4.0"
 apply_payload "packages/cli/src/commands/triage.ts" "triage_authority_gate@v8.4.0" "const items =" "triage_authority_gate@v8.4.0.pl"
 
 # 5. SEQUENTIAL PATCHING (CR-003)
-apply_payload "packages/cli/src/commands/set.ts" "set_imports@v8.4.0" "import { getContext } from \"../config\";" "set_imports@v8.4.0.pl" "replace_line"
-apply_payload "packages/cli/src/commands/set.ts" "set_auth_gate@v8.4.0" "const ctx = getContext();" "set_auth_gate@v8.4.0.pl"
-apply_payload "packages/cli/src/commands/set.ts" "set_auto_client@v8.4.0" "matched = true;" "set_auto_client@v8.4.0.pl"
+apply_payload "packages/cli/src/commands/set.ts" "set_cmd@v8.4.0" "" "set_cmd@v8.4.0.pl" "full_replace"
 
 apply_payload "packages/cli/src/commands/start.ts" "start_cmd@v8.4.0" "" "start_cmd@v8.4.0.pl" "full_replace"
 apply_payload "packages/cli/src/pulse.ts" "pulse_start_syntax@v8.4.0" '  case "start":' "pulse_start_syntax@v8.4.0.pl" "replace_block" '  case "cleanup":'
