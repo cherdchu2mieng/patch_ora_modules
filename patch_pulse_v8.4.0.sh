@@ -166,16 +166,11 @@ apply_payload "packages/cli/src/config.ts" "config_orchestrator_field@v8.4.0" " 
 apply_payload "packages/cli/src/config.ts" "config_get_current_oracle@v8.2.1" "export function getContext()" "config_get_current_oracle@v8.2.1.pl"
 apply_payload "packages/cli/src/config.ts" "config_enforce_auth@v8.4.0" "export function loadConfig()" "config_enforce_auth@v8.4.0.pl"
 
-# 3. SEQUENTIAL PATCHING (CR-001)
-apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "import { gh," "add_imports@v8.4.0.pl" "replace_line"
-apply_payload "packages/cli/src/commands/add.ts" "add_config_logic@v8.4.0" "const ctx = getContext();" "add_config_logic@v8.4.0.pl"
-apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return addedItemId;" "add_field_sync@v8.4.0.pl"
+# 3. SEQUENTIAL PATCHING (CR-001/002)
+apply_payload "packages/cli/src/commands/add.ts" "cmd_add@v8.4.0" "" "cmd_add@v8.4.0.pl" "full_replace"
+apply_payload "packages/cli/src/commands/board.ts" "cmd_board@v8.4.0" "" "cmd_board@v8.4.0.pl" "full_replace"
+apply_payload "packages/cli/src/commands/triage.ts" "cmd_triage@v8.4.0" "" "cmd_triage@v8.4.0.pl" "full_replace"
 apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" 'case "set":'
-
-# 4. SEQUENTIAL PATCHING (CR-002)
-apply_payload "packages/cli/src/commands/board.ts" "board_config_check@v8.4.0" "const allItems =" "board_config_check@v8.4.0.pl"
-apply_payload "packages/cli/src/commands/triage.ts" "triage_config_check@v8.4.0" "const items =" "triage_config_check@v8.4.0.pl"
-apply_payload "packages/cli/src/commands/triage.ts" "triage_authority_gate@v8.4.0" "const items =" "triage_authority_gate@v8.4.0.pl"
 
 # 5. SEQUENTIAL PATCHING (CR-003)
 apply_payload "packages/cli/src/commands/set.ts" "set_cmd@v8.4.0" "" "set_cmd@v8.4.0.pl" "full_replace"
