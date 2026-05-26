@@ -179,10 +179,8 @@ apply_payload "packages/cli/src/commands/start.ts" "start_cmd@v8.4.0" "" "start_
 apply_payload "packages/cli/src/commands/och.ts" "cmd_och@v8.4.0" "" "cmd_och@v8.4.0.pl" "create"
 
 # 5. REGISTRY & ENTRY
-apply_payload "packages/cli/src/commands/index.ts" "index_och@v8.4.0" "export { board }" "index_och@v8.4.0.pl"
-apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" 'case "set":'
-apply_payload "packages/cli/src/pulse.ts" "pulse_start_syntax@v8.4.0" '  case "start":' "pulse_start_syntax@v8.4.0.pl" "replace_block" '  case "cleanup":'
-apply_payload "packages/cli/src/pulse.ts" "pulse_och_syntax@v8.4.0" 'case "add":' "pulse_och_syntax@v8.4.0.pl"
+apply_payload "packages/cli/src/commands/index.ts" "index_cumulative@v8.4.0" "" "index_cumulative@v8.4.0.pl" "full_replace"
+apply_payload "packages/cli/src/pulse.ts" "cmd_pulse@v8.4.0" "" "cmd_pulse@v8.4.0.pl" "full_replace"
 
 # 6. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
