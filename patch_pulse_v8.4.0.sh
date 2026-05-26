@@ -170,7 +170,7 @@ apply_payload "packages/cli/src/commands/board.ts" "cmd_board@v8.4.0" "" "cmd_bo
 apply_payload "packages/cli/src/commands/triage.ts" "cmd_triage@v8.4.0" "" "cmd_triage@v8.4.0.pl" "full_replace"
 apply_payload "packages/cli/src/commands/set.ts" "set_cmd@v8.4.0" "" "set_cmd@v8.4.0.pl" "full_replace"
 apply_payload "packages/cli/src/commands/start.ts" "start_cmd@v8.4.0" "" "start_cmd@v8.4.0.pl" "full_replace"
-apply_payload "packages/cli/src/commands/och.ts" "cmd_och@v8.4.0" "" "cmd_och@v8.4.0.pl" "create"
+apply_payload "packages/cli/src/commands/chb.ts" "cmd_chb@v8.4.0" "" "cmd_chb@v8.4.0.pl" "create"
 
 # 5. REGISTRY & ENTRY
 apply_payload "packages/cli/src/commands/index.ts" "index_cumulative@v8.4.0" "" "index_cumulative@v8.4.0.pl" "full_replace"

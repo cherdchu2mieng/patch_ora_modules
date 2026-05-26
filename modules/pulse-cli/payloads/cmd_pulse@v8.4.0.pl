@@ -3,7 +3,7 @@
  * Pulse Oracle
  */
 
-import { board, timeline, add, set, fieldAdd, clearDate, scan, autoAssign, init, escalate, heartbeat, resume, remove, close, triage, scheduler, sentry, backfillWt, start, blog, cleanup, keyword } from "./commands/index";
+import { board, timeline, add, set, fieldAdd, clearDate, scan, autoAssign, init, escalate, heartbeat, resume, remove, close, triage, scheduler, sentry, backfillWt, start, blog, cleanup, keyword, chb } from "./commands/index";
 
 const [cmd, ...args] = process.argv.slice(2);
 
@@ -21,13 +21,14 @@ switch (cmd) {
   case "t":
     await timeline(args[0]);
     break;
-  case "och": {
-    const { och } = require("./commands/index");
+  case "chb": {
     if (!args[0]) {
-      console.error("Usage: pulse och <master_item_index> [target_repo]");
+      console.error("Usage: pulse chb <master_item_index> [--Delegated]");
       process.exit(1);
     }
-    await och(parseInt(args[0]), args[1]);
+    await chb(parseInt(args[0]), {
+      delegated: args.includes("--Delegated")
+    });
     break;
   }
   case "add":
@@ -182,6 +183,7 @@ switch (cmd) {
     board, b [filter]     Show Master Board (filter by oracle/client/priority)
     timeline, t [filter]  ASCII timeline (filter by oracle/client/priority)
     add, a <title>        Create Issue + add to board
+    chb <#> [--Delegated] Change Board (Delegation ITB -> AIB)
     set, s <#> <values>   Set fields (auto-detect field from value)
     field-add, fa <f> <v> Add option to field (preserves existing values!)
     clear, c <#> [field]  Clear dates (start|target|both)
@@ -201,7 +203,6 @@ switch (cmd) {
     sentry, monitor       Activity monitor — quick or deep [--post]
     backfill-wt, bwt      Scan disk worktrees + match to board items [--dry]
     start <#>             Initiate surgical status update to In Progress
-    och <#> [repo]        Direct Ingress to AI Orchestrator
     blog <file.md>        Publish markdown to Discussion (with provenance)
     cleanup, gc [--dry]   Remove stale/orphan worktrees (skips dirty/unpushed)
 
@@ -218,7 +219,7 @@ switch (cmd) {
     pulse board
     pulse board Neo
     pulse add "New task"
-    pulse keyword sync
+    pulse chb 17 --Delegated
     pulse set 1 P0 Bitkub Hermes
     pulse start 14
 `);

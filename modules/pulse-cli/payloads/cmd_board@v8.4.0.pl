@@ -3,6 +3,7 @@ import { getContext } from "../config";
 
 export async function board(filter?: string) {
   try {
+    const ctx = getContext();
     // v8.4.0: Config Pre-check
     const configPath = require('path').join(process.cwd(), 'pulse.config.json');
     if (!require('fs').existsSync(configPath)) {
@@ -10,7 +11,7 @@ export async function board(filter?: string) {
       return;
     }
 
-    const allItems = await getItems(getContext());
+    const allItems = await getItems(ctx);
     const indexed = allItems.map((item, i) => ({ item, rawIndex: i + 1 }));
 
     let filtered = filter
@@ -24,14 +25,22 @@ export async function board(filter?: string) {
       filtered.filter(({ item }) => !item.priority),
     ];
 
+    // v8.4.0: Board Type Detection
+    const itbOwner = ctx.board?.ITB?.split("/")[0];
+    const aibOwner = ctx.board?.AIB?.split("/")[0];
+    let boardType = "";
+    if (ctx.org === itbOwner) boardType = " (ITB)";
+    else if (ctx.org === aibOwner) boardType = " (AIB)";
+
     const label = filter ? `Master Board — ${filter}` : "Master Board";
-    console.log(`\n  Pulse — ${label}  (${filtered.length} items)\n`);
+    console.log(`
+  Pulse — ${label}${boardType}  (${filtered.length} items)
+`);
 
     function shortRepo(repo: string): string {
       return repo.replace(/-oracle$/i, "");
     }
 
-    // v8.4.0: Added Anchor Column (10 Cols Total)
     console.log(
       "  #  Title                                          Pri  Client    Oracle   Repo           WT          Status       Anchor       Dates"
     );

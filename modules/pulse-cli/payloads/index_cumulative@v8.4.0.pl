@@ -20,4 +20,4 @@ export { start } from "./start";
 export { blog } from "./blog";
 export { cleanup } from "./cleanup";
 export { keyword } from "./keyword";
-export { och } from "./och";
+export { chb } from "./chb";
