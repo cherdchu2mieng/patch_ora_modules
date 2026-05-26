@@ -167,7 +167,7 @@ PY_EOF
 apply_payload "packages/cli/src/config.ts" "cmd_config@v8.4.0" "" "cmd_config@v8.4.0.pl" "full_replace"
 
 # 3. COMMANDS (Cumulative Sacred)
-apply_payload "packages/cli/src/commands/init.ts" "init_org_mode@v8.2.1" "" "init_org_mode@v8.2.1.pl" "full_replace"
+apply_payload "packages/cli/src/commands/init.ts" "cmd_init@v8.4.0" "" "cmd_init@v8.4.0.pl" "full_replace"
 apply_payload "packages/cli/src/commands/keyword.ts" "cmd_keyword@v8.2.1" "" "cmd_keyword@v8.2.1.pl" "full_replace"
 
 # 4. COMMANDS (v8.4.0 Features)
