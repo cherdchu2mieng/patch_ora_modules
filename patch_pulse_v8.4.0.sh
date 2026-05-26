@@ -81,57 +81,51 @@ end = os.environ.get("T_END")
 path = os.path.join(pulse_path, target_file)
 payload_path = os.path.join(payloads_dir, payload_name)
 
-already_present = False
+original_content = ""
+shebang = ""
 if os.path.exists(path):
     with open(path, "r") as f:
-        content = f.read()
-    manifest_match = re.search(r"^// @pulse-patch:.*", content, re.MULTILINE)
-    if manifest_match:
-        manifest_line = manifest_match.group(0)
-        if tag in manifest_line.split():
-            already_present = True
-else:
-    if mode != "create":
-        print(f"  ⚠️ Skipping: {path} not found")
-        sys.exit(0)
+        original_content = f.read()
+    if original_content.startswith("#!"):
+        shebang = original_content.split("\n")[0] + "\n"
 
-if already_present:
+# Idempotency Check
+if tag in original_content:
     print(f"  ✅ {tag} already present.")
     sys.exit(0)
 
 if not os.path.exists(payload_path):
-    print(f"  ❌ Error: Payload file not found: {payload_path}")
-    sys.exit(1)
+    if mode == "create":
+        print(f"  ⚠️ Creating mode but payload missing: {payload_path}")
+        sys.exit(1)
+    print(f"  ⚠️ Skipping: {path} not found")
+    sys.exit(0)
 
 with open(payload_path, "r") as f:
     payload = f.read().strip()
 
-if mode == "create" and not os.path.exists(path):
-    print(f"  🆕 Creating new file: {target_file}")
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    content = f"// @pulse-patch: {tag}\n" + payload
+content = original_content
+
+# Injection
+if mode == "full_replace" or mode == "create":
+    content = shebang + f"// @pulse-patch: {tag}\n" + payload
 else:
-    # Manifest Management for existing files
+    # Manifest Management for existing files (Insert Mode)
     manifest_match = re.search(r"^// @pulse-patch:.*", content, re.MULTILINE)
     if manifest_match:
         lines = content.split("\n")
         for i, line in enumerate(lines):
             if line.startswith("// @pulse-patch:"):
-                if tag not in line.split():
-                    lines[i] = line.rstrip() + f" {tag}"
+                lines[i] = line.rstrip() + f" {tag}"
                 break
         content = "\n".join(lines)
     else:
-        lines = content.split("\n")
-        if lines[0].startswith("#!"):
-            content = lines[0] + "\n" + f"// @pulse-patch: {tag}" + "\n" + "\n".join(lines[1:])
+        if shebang:
+            content = shebang + f"// @pulse-patch: {tag}\n" + content[len(shebang):]
         else:
             content = f"// @pulse-patch: {tag}\n" + content
 
-    # Injection
-    if mode == "full_replace" or mode == "create":
-        content = f"// @pulse-patch: {tag}\n" + payload
-    elif mode == "replace_block":
+    if mode == "replace_block":
         if start in content and end in content:
             parts = content.split(start, 1)
             post_parts = parts[1].split(end, 1)
