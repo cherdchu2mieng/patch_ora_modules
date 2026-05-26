@@ -86,9 +86,10 @@ export async function init() {
     // --- Phase 4.5: Orchestrator Object Construction ---
     let orchestrator: any;
     if (orchestratorOracle) {
+      // Determine repo name from discovery or use default pattern
       const orchRepoName = oracleRepos[orchestratorOracle.toLowerCase()] || `${orchestratorOracle.toLowerCase()}-oracle`;
       orchestrator = {
-        repo: `${effectiveOrg}/${orchRepoName}`,
+        repo: `${githubUser}/${orchRepoName}`, // Always use githubUser for Orchestrator
         oracle: orchestratorOracle.toLowerCase()
       };
     }
