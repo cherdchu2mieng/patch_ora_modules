@@ -31,53 +31,43 @@ export async function init() {
       } catch {}
     }
 
-    // --- Phase 2: Scope & Identity Selection ---
-    const scopeInput = await ask(rl, "Initialize scope: [U]ser (default) or [O]rg? (u) ");
-    const isOrg = (scopeInput.trim().toLowerCase() || 'u') === 'o';
-
-    let effectiveOrg: string;
     const user = await getGHUser();
+
+    // --- Phase 2: Information Gathering (Upfront) ---
+    const githubUser = (await ask(rl, `GitHub user (default: ${user}): `)).trim() || user;
+    const githubOrg = (await ask(rl, "GitHub org (default: itinfosv): ")).trim() || "itinfosv";
     
-    if (isOrg) {
-      effectiveOrg = (await ask(rl, "GitHub org: ")).trim();
-    } else {
-      effectiveOrg = (await ask(rl, `GitHub user (default: ${user}): `)).trim() || user;
+    console.log("\n--- Gateway Configuration ---");
+    const gOracle = (await ask(rl, "Gateway Oracle (e.g. it49072, optional): ")).trim();
+    let gateway: any;
+    if (gOracle) {
+      const gRepo = (await ask(rl, `Gateway Repo (default: ${githubOrg}/${gOracle}-oracle): `)).trim() || `${githubOrg}/${gOracle}-oracle`;
+      const gClient = (await ask(rl, "Gateway Client (e.g. IT Board Team): ")).trim();
+      const gPriority = (await ask(rl, "Gateway Priority (e.g. P2): ")).trim() || "P2";
+      gateway = { repo: gRepo, oracle: gOracle, client: gClient, priority: gPriority };
     }
 
-    if (!effectiveOrg) {
-      console.error("Error: Identity (User or Org) is required.");
-      return;
-    }
+    const orchestrator = (await ask(rl, "Orchestrator Oracle (e.g. gemi): ")).trim();
+
+    const scopeInput = await ask(rl, "\nInitialize scope: [U]ser (default) or [O]rg? (u) ");
+    const isOrg = (scopeInput.trim().toLowerCase() || 'u') === 'o';
 
     const numStr = await ask(rl, "Project number: ");
     const projectNumber = parseInt(numStr.trim());
     if (isNaN(projectNumber)) {
-      console.error("Project number must be a number.");
+      console.error("Error: Project number must be a number.");
       return;
     }
-    
-    let orchestrator: string | undefined;
-    let gateway: any;
-    let syncTargetUser: string | undefined;
 
-    // --- Phase 2.5: Gateway Configuration ---
-    console.log("\n--- Gateway Configuration ---");
-    const gRepo = (await ask(rl, "Gateway Repo (e.g. itinfosv/it49072-oracle, optional): ")).trim();
-    if (gRepo) {
-      const gOracle = (await ask(rl, "Gateway Oracle (e.g. pegasus): ")).trim();
-      const gClient = (await ask(rl, "Gateway Client (e.g. IT Board Team): ")).trim();
-      const gPriority = (await ask(rl, "Gateway Priority (e.g. P2): ")).trim();
-      gateway = { repo: gRepo, oracle: gOracle, client: gClient, priority: gPriority };
-      
-      if (isOrg) {
-        syncTargetUser = (await ask(rl, `Sync Gateway to User (default: ${user}): `)).trim() || user;
-      }
+    // --- Phase 3: Selection Mapping ---
+    const effectiveOrg = isOrg ? githubOrg : githubUser;
+    
+    let syncTargetUser: string | undefined;
+    if (isOrg && gateway) {
+      syncTargetUser = (await ask(rl, `Sync Gateway to User (default: ${user}): `)).trim() || user;
     }
 
-    // Always ask for Orchestrator Oracle
-    orchestrator = (await ask(rl, "Orchestrator Oracle (e.g. gemi): ")).trim() || undefined;
-
-    // --- Phase 3: Repo Discovery ---
+    // --- Phase 4: Repo Discovery ---
     console.log(`\nDiscovering oracle repos in ${effectiveOrg}... `);
     const reposJson = await gh("repo", "list", effectiveOrg, "--json", "name", "--limit", "200");
     const repos: { name: string }[] = JSON.parse(reposJson);
@@ -101,7 +91,7 @@ export async function init() {
       }
     }
 
-    // --- Phase 4: Construct Standard Routing Object ---
+    // --- Phase 5: Construct Standard Routing Object ---
     const toDisplay = (name: string) => name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
     
     const routing: any = {
@@ -117,12 +107,12 @@ export async function init() {
       default: oracleRepos["pulse"] ? "Pulse" : (oracleRepos["gemi" ] ? "Gemi" : undefined)
     };
 
-    // --- Phase 5: Construct & Save Current Config ---
-    const config: any = {
+    // --- Phase 6: Construct & Save Current Config ---
+    const config: PulseConfig = {
       org: effectiveOrg,
       projectNumber,
       oracleRepos,
-      orchestrator: orchestrator,
+      orchestrator: orchestrator || undefined,
       gateway: gateway,
       routing
     };
@@ -148,7 +138,7 @@ export async function init() {
     fs.symlinkSync(targetPath, localLinkPath);
     console.log(`Linked: pulse.config.json -> ${targetFileName}`);
 
-    // --- Phase 6: Targeted Gateway Sync ---
+    // --- Phase 7: Targeted Gateway Sync ---
     if (isOrg && gateway && syncTargetUser) {
       let userConfigPath: string | undefined;
       const explicitUserPath = path.join(configDir, `pulse.config.${syncTargetUser}_${projectNumber}.json`);
