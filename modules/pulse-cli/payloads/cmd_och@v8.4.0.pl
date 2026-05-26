@@ -15,21 +15,27 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
     const current = getCurrentOracle();
     const assignedOracle = (item.oracle || "").toLowerCase();
 
-    // 1. Pre-flight Validation
+    // 1. Authority Check
     if (assignedOracle && current && assignedOracle !== current.toLowerCase()) {
       console.error(`❌ Authority Denied: You (${current}) are not the assigned Oracle (${assignedOracle}) for this task.`);
       return;
     }
 
-    if ((item.status || "").toLowerCase() !== "assigned") {
-      console.error(`❌ Error: Task must be in 'Assigned' status to be sent to AI Orchestrator (Current: ${item.status}).`);
+    // v8.4.0: Allow Ingress from 'Assigned' or 'New' status for flexibility
+    const currentStatus = (item.status || "").toLowerCase();
+    if (currentStatus !== "assigned" && currentStatus !== "new") {
+      console.error(`❌ Error: Task must be in 'Assigned' or 'New' status (Current: ${item.status}).`);
       return;
     }
 
-    // 2. Target Resolution
-    const resolvedTarget = targetRepo || process.env.PULSE_OCH_TARGET;
+    // 2. Target Resolution (CR-004 Optimized)
+    // Priority: Parameter > Env Var > pulse.config.json
+    const configRepo = (ctx as any).orchestrator?.repo;
+    const resolvedTarget = targetRepo || process.env.PULSE_OCH_TARGET || configRepo;
+    
     if (!resolvedTarget) {
-      console.error("❌ Error: No target repository specified. Use: pulse och <index> <org/repo> or set PULSE_OCH_TARGET env.");
+      console.error("❌ Error: No target repository specified.");
+      console.error("💡 Use: pulse och <index> <org/repo> or set 'orchestrator.repo' in pulse.config.json");
       return;
     }
 
@@ -40,7 +46,7 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
     const body = [
       item.body || "",
       "",
-      "---",
+      "----- ",
       `🔗 **Ingress Anchor**: ${anchor}`,
       `👤 **Requester**: ${current || 'Human'}`
     ].join("\n");
@@ -50,8 +56,7 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
     
     console.log(`✅ Created remote Issue #${newIssueId} in ${resolvedTarget}`);
 
-    // 4. Initial Remote Update (Placeholder - assuming target is also a Pulse board)
-    // For now, we establish the link on the Master Board
+    // 4. Master Board Linkage
     const masterIssueUrl = (item as any).content?.url;
     if (masterIssueUrl) {
       const linkMsg = `✅ Delegated to AI Orchestrator: ${resolvedTarget}#${newIssueId}`;
