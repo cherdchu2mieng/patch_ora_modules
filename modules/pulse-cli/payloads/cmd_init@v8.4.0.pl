@@ -42,7 +42,7 @@ export async function init() {
     const localLinkPath = path.join(process.cwd(), 'pulse.config.json');
     const user = await getGHUser();
 
-    // --- Phase 2: Information Gathering (Upfront) ---
+    // --- Phase 2: Information Gathering ---
     const githubUser = (await ask(rl, `GitHub user (default: ${user}): `)).trim() || user;
     const githubOrg = (await ask(rl, "GitHub org (default: itinfosv): ")).trim() || "itinfosv";
     
@@ -76,7 +76,7 @@ export async function init() {
     let config: PulseConfig;
 
     if (fs.existsSync(targetPath)) {
-      // --- Phase 4: Existing Config Patching (Cumulative) ---
+      // --- Phase 4: Existing Config Patching ---
       console.log(`\nOK Existing config found: ${targetFileName}`);
       config = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
       
@@ -93,7 +93,6 @@ export async function init() {
         }
       }
 
-      // Sync upfront choices if provided
       if (gateway) config.gateway = gateway;
       if (orchestratorOracle) {
          const orchRepoName = config.oracleRepos[orchestratorOracle.toLowerCase()] || `${orchestratorOracle.toLowerCase()}-oracle`;
@@ -102,9 +101,14 @@ export async function init() {
            oracle: orchestratorOracle.toLowerCase()
          };
       }
+      // Update Board mapping in existing config
+      config.board = {
+        ITB: `${githubOrg}/pulse-oracle`,
+        AIB: `${githubUser}/pulse-oracle`
+      };
 
     } else {
-      // --- Phase 5: Full Repo Discovery (New Config) ---
+      // --- Phase 5: Full Discovery (New Config) ---
       console.log(`\nDiscovering oracle repos in ${effectiveOrg}... `);
       const reposJson = await gh("repo", "list", effectiveOrg, "--json", "name", "--limit", "200");
       const repos: { name: string }[] = JSON.parse(reposJson);
@@ -142,6 +146,10 @@ export async function init() {
         projectNumber,
         oracleRepos,
         orchestrator,
+        board: {
+          ITB: `${githubOrg}/pulse-oracle`,
+          AIB: `${githubUser}/pulse-oracle`
+        },
         gateway,
         routing: buildRouting(oracleRepos)
       };

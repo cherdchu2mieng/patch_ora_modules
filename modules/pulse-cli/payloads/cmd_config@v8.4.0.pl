@@ -18,6 +18,7 @@ export interface PulseConfig {
   projectNumber: number;
   repoName?: string;
   orchestrator?: OrchestratorConfig;
+  board?: { ITB: string; AIB: string };
   gateway?: { repo: string; oracle: string; client: string; priority: string };
   oracleRepos: Record<string, string>;
   routing?: RoutingConfig;
@@ -68,7 +69,7 @@ export function enforceAuth() {
   const orchestrator = getContext().orchestrator;
   const orchestratorName = typeof orchestrator === "string" ? orchestrator : (orchestrator as any)?.oracle;
   if (orchestratorName && current !== orchestratorName) {
-    console.error(`Only the designated Orchestrator '${orchestratorName}' can perform board management (Current: ${current || 'unknown'}).`);
+    console.error(`Only the designated Orchestrator '${orchestratorName}' can perform board management (Current: ${current || "unknown"}).`);
     process.exit(1);
   }
 }
@@ -136,7 +137,7 @@ export function getAllContexts(): { ctx: PulseContext; label: string }[] {
   return all;
 }
 
-/** Get the ghq root (code directory) — uses `ghq root` or falls back to ~/Code */
+/** Get the ghq root (code directory) — uses \`ghq root\` or falls back to ~/Code */
 let _ghqRoot: string | null = null;
 export function getGhqRoot(): string {
   if (_ghqRoot) return _ghqRoot;
