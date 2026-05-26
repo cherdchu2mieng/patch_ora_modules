@@ -58,11 +58,6 @@ export async function init() {
 
     // --- Phase 3: Selection Mapping ---
     const effectiveOrg = isOrg ? githubOrg : githubUser;
-    
-    let syncTargetUser: string | undefined;
-    if (isOrg && gateway) {
-      syncTargetUser = (await ask(rl, `Sync Gateway to User (default: ${user}): `)).trim() || user;
-    }
 
     // --- Phase 4: Repo Discovery ---
     console.log(`\nDiscovering oracle repos in ${effectiveOrg}... `);
@@ -135,18 +130,10 @@ export async function init() {
     fs.symlinkSync(targetPath, localLinkPath);
     console.log(`Linked: pulse.config.json -> ${targetFileName}`);
 
-    // --- Phase 7: Targeted Gateway Sync ---
-    if (isOrg && gateway && syncTargetUser) {
-      let userConfigPath: string | undefined;
-      const explicitUserPath = path.join(configDir, `pulse.config.${syncTargetUser}_${projectNumber}.json`);
-
-      if (fs.existsSync(explicitUserPath) && explicitUserPath !== targetPath) {
-        userConfigPath = explicitUserPath;
-      } else if (previousUserConfigPath && previousUserConfigPath !== targetPath && fs.existsSync(previousUserConfigPath)) {
-        userConfigPath = previousUserConfigPath;
-      }
-
-      if (userConfigPath) {
+    // --- Phase 7: Automatic Gateway Sync ---
+    if (isOrg && gateway) {
+      const userConfigPath = path.join(configDir, `pulse.config.${githubUser}_${projectNumber}.json`);
+      if (fs.existsSync(userConfigPath) && userConfigPath !== targetPath) {
         console.log(`\nSyncing Gateway to User Config: ${path.basename(userConfigPath)}`);
         const userCfg = JSON.parse(fs.readFileSync(userConfigPath, 'utf8'));
         userCfg.gateway = gateway;
