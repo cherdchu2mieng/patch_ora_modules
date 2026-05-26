@@ -38,11 +38,10 @@ export async function init() {
     const githubOrg = (await ask(rl, "GitHub org (default: itinfosv): ")).trim() || "itinfosv";
     
     console.log("\n--- Gateway Configuration ---");
-    const gOracle = (await ask(rl, "Gateway Oracle (e.g. it49072, optional: enter to skip): ")).trim();
+    const gOracle = (await ask(rl, "Gateway Oracle (e.g. it49072): ")).trim();
     let gateway: any;
     if (gOracle) {
       const gRepo = (await ask(rl, `Gateway Repo (default: ${githubOrg}/${gOracle}-oracle): `)).trim() || `${githubOrg}/${gOracle}-oracle`;
-      // v8.4.0: Remove client and priority from gateway per user request
       gateway = { repo: gRepo, oracle: gOracle };
     }
 
@@ -107,7 +106,7 @@ export async function init() {
     };
 
     // --- Phase 6: Construct & Save Current Config ---
-    const config: any = {
+    const config: PulseConfig = {
       org: effectiveOrg,
       projectNumber,
       oracleRepos,
