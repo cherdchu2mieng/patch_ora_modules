@@ -76,20 +76,19 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
         remoteMutations.push(`updateStatus: updateProjectV2ItemFieldValue(input: { projectId: "${targetProjectId}", itemId: "${targetItemId}", fieldId: "${statusField.id}", value: { singleSelectOptionId: "${delOpt.id}" } }) { projectV2Item { id } }`);
       }
 
-      // 4.2 Client = Gateway Oracle (e.g. it49072)
+      // 4.2 Client = Human-TEAM (Standard for Ingress)
       const clientField = targetFields.find(f => f.name.toLowerCase() === "client");
-      const gatewayName = (ctx as any).gateway?.oracle;
-      if (clientField && gatewayName) {
+      const clientValue = "Human-TEAM";
+      if (clientField) {
         if (clientField.options) {
-          const clientOpt = clientField.options.find(o => o.name.toLowerCase() === gatewayName.toLowerCase());
+          const clientOpt = clientField.options.find(o => o.name.toLowerCase() === clientValue.toLowerCase());
           if (clientOpt) {
             remoteMutations.push(`updateClient: updateProjectV2ItemFieldValue(input: { projectId: "${targetProjectId}", itemId: "${targetItemId}", fieldId: "${clientField.id}", value: { singleSelectOptionId: "${clientOpt.id}" } }) { projectV2Item { id } }`);
           } else {
-             console.warn(`  ⚠️ Warning: Client option '${gatewayName}' not found in AIB board.`);
+             console.warn(`  ⚠️ Warning: Client option '${clientValue}' not found in AIB board.`);
           }
         } else {
-          // Fallback to text field
-          remoteMutations.push(`updateClient: updateProjectV2ItemFieldValue(input: { projectId: "${targetProjectId}", itemId: "${targetItemId}", fieldId: "${clientField.id}", value: { text: "${gatewayName}" } }) { projectV2Item { id } }`);
+          remoteMutations.push(`updateClient: updateProjectV2ItemFieldValue(input: { projectId: "${targetProjectId}", itemId: "${targetItemId}", fieldId: "${clientField.id}", value: { text: "${clientValue}" } }) { projectV2Item { id } }`);
         }
       }
 
@@ -101,7 +100,7 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
 
       if (remoteMutations.length > 0) {
         await graphql(`mutation { ${remoteMutations.join(" ")} }`);
-        console.log("✅ AIB board fields initialized (Status: Delegated).");
+        console.log("✅ AIB board fields initialized (Status: Delegated, Client: Human-TEAM).");
       }
     } catch (e) {
       console.warn("  ⚠️ AIB board update skipped:", e.message);
