@@ -37,11 +37,10 @@ export async function init() {
     const githubUser = (await ask(rl, `GitHub user (default: ${user}): `)).trim() || user;
     const githubOrg = (await ask(rl, "GitHub org (default: itinfosv): ")).trim() || "itinfosv";
     
-    console.log("\n--- Gateway Configuration ---");
     const gOracle = (await ask(rl, "Gateway Oracle (e.g. it49072): ")).trim();
     let gateway: any;
     if (gOracle) {
-      const gRepo = (await ask(rl, `Gateway Repo (default: ${githubOrg}/${gOracle}-oracle): `)).trim() || `${githubOrg}/${gOracle}-oracle`;
+      const gRepo = `${githubOrg}/${gOracle}-oracle`;
       gateway = { repo: gRepo, oracle: gOracle };
     }
 
