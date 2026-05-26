@@ -1,4 +1,4 @@
-import { gh, getItems, getFields, getProjectId, graphql } from "@pulse-oracle/sdk";
+import { gh, getItems, graphql } from "@pulse-oracle/sdk";
 import { getContext, getCurrentOracle } from "../config";
 
 export async function start(masterItemIndex: number) {
@@ -29,34 +29,38 @@ export async function start(masterItemIndex: number) {
 
   console.log(`🎬 Starting workflow for Master Item #${masterItemIndex}...`);
   
-  const projectId = await getProjectId(ctx);
-  const fields = await getFields(ctx);
+  try {
+    // 3. Get Project Info (Optimized: One call for both ID and Fields)
+    const rawData = await gh("project", "view", String(ctx.projectNumber), "--owner", ctx.org, "--format", "json");
+    const projectData = JSON.parse(rawData);
+    const projectId = projectData.id;
+    const fields = projectData.fields;
 
-  // 3. Surgical Status Update
-  const statusField = fields.find(f => f.name.toLowerCase() === "status");
-  const inProgressOpt = statusField?.options?.find(o => o.name.toLowerCase() === "in progress");
+    // 4. Surgical Updates (Status & Date)
+    const statusField = fields.find(f => f.name.toLowerCase() === "status");
+    const inProgressOpt = statusField?.options?.find(o => o.name.toLowerCase() === "in progress");
+    const startDateField = fields.find(f => f.name.toLowerCase() === "start date");
 
-  if (statusField && inProgressOpt) {
-    await gh(
-      "project", "item-edit", "--project-id", projectId,
-      "--id", item.id, "--field-id", statusField.id,
-      "--single-select-option-id", inProgressOpt.id
-    );
-    console.log(`✅ Status updated to 'In Progress' on Master Board.`);
-  }
+    const mutations = [];
+    if (statusField && inProgressOpt) {
+      mutations.push(`updateStatus: updateProjectV2ItemFieldValue(input: { projectId: "${projectId}", itemId: "${item.id}", fieldId: "${statusField.id}", value: { singleSelectOptionId: "${inProgressOpt.id}" } }) { projectV2Item { id } }`);
+    }
 
-  // 4. Surgical Date Update
-  const startDateField = fields.find(f => f.name.toLowerCase() === "start date");
-  if (startDateField && !item["start date"]) {
-    const today = new Date().toISOString().split("T")[0];
-    await graphql(`mutation {
-      updateProjectV2ItemFieldValue(input: {
-        projectId: "${projectId}",
-        itemId: "${item.id}",
-        fieldId: "${startDateField.id}",
-        value: { date: "${today}" }
-      }) { projectV2Item { id } }
-    }`);
-    console.log(`📅 Start Date set to ${today}.`);
+    if (startDateField && !item["start date"]) {
+      const today = new Date().toISOString().split("T")[0];
+      mutations.push(`updateDate: updateProjectV2ItemFieldValue(input: { projectId: "${projectId}", itemId: "${item.id}", fieldId: "${startDateField.id}", value: { date: "${today}" } }) { projectV2Item { id } }`);
+    }
+
+    if (mutations.length > 0) {
+      await graphql(`mutation { ${mutations.join(" ")} }`);
+      if (statusField && inProgressOpt) console.log("✅ Status updated to 'In Progress' on Master Board.");
+      if (startDateField && !item["start date"]) console.log(`📅 Start Date set to ${new Date().toISOString().split("T")[0]}.`);
+    }
+  } catch (e: any) {
+    if (e.message?.includes("rate limit exceeded")) {
+      console.error("❌ GitHub API Rate Limit Exceeded. Please wait a few minutes before trying again.");
+    } else {
+      console.error("❌ Failed to update board:", e.message);
+    }
   }
 }
