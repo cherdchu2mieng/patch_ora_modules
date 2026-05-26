@@ -25,18 +25,17 @@ export async function board(filter?: string) {
     ];
 
     const label = filter ? `Master Board — ${filter}` : "Master Board";
-    console.log(`
-  Pulse — ${label}  (${filtered.length} items)
-`);
+    console.log(`\n  Pulse — ${label}  (${filtered.length} items)\n`);
 
     function shortRepo(repo: string): string {
       return repo.replace(/-oracle$/i, "");
     }
 
+    // v8.4.0: Added Anchor Column (10 Cols Total)
     console.log(
-      "  #  Title                                          Pri  Client    Oracle   Repo           WT          Status       Dates"
+      "  #  Title                                          Pri  Client    Oracle   Repo           WT          Status       Anchor       Dates"
     );
-    console.log("  " + "─".repeat(132));
+    console.log("  " + "─".repeat(146));
 
     for (const group of groups) {
       for (const { item, rawIndex } of group) {
@@ -47,9 +46,10 @@ export async function board(filter?: string) {
         const repo = padDisplay(sliceDisplay(shortRepo(item.repo || "-"), 13), 13);
         const wt = padDisplay(sliceDisplay(item.worktree || "-", 10), 10);
         const status = (item.status || "-").padEnd(11);
+        const anchor = padDisplay(sliceDisplay((item as any).anchor || "-", 11), 11);
         const dates = fmtBoardDates(item["start date"] || "", item["target date"] || "");
         console.log(
-          `  ${String(rawIndex).padStart(2)}  ${title}  ${pri}  ${client}  ${oracle}  ${repo}  ${wt}  ${status}  ${dates}`
+          `  ${String(rawIndex).padStart(2)}  ${title}  ${pri}  ${client}  ${oracle}  ${repo}  ${wt}  ${status}  ${anchor}  ${dates}`
         );
       }
     }
