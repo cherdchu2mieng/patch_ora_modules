@@ -117,11 +117,13 @@ else:
         content = f"// @pulse-patch: {tag}\n" + content
 
 # Injection
-if mode == "replace_block":
+if mode == "full_replace":
+    content = f"// @pulse-patch: {tag}\n" + payload
+elif mode == "replace_block":
     if start in content and end in content:
         parts = content.split(start, 1)
         post_parts = parts[1].split(end, 1)
-        content = parts[0] + payload + "\n  " + end + post_parts[1]
+        content = parts[0] + payload + "\n" + post_parts[1]
     else:
         print(f"  ❌ Error: Block start/end not found in {target_file}")
         sys.exit(1)
@@ -158,7 +160,7 @@ apply_payload "packages/cli/src/config.ts" "config_enforce_auth@v8.4.0" "export 
 apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "import { gh," "add_imports@v8.4.0.pl" "replace_line"
 apply_payload "packages/cli/src/commands/add.ts" "add_config_logic@v8.4.0" "const ctx = getContext();" "add_config_logic@v8.4.0.pl"
 apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return addedItemId;" "add_field_sync@v8.4.0.pl"
-apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" '  case "set":'
+apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" 'case "set":'
 
 # 4. SEQUENTIAL PATCHING (CR-002)
 apply_payload "packages/cli/src/commands/board.ts" "board_config_check@v8.4.0" "const allItems =" "board_config_check@v8.4.0.pl"
@@ -169,19 +171,19 @@ apply_payload "packages/cli/src/commands/triage.ts" "triage_authority_gate@v8.4.
 apply_payload "packages/cli/src/commands/set.ts" "set_auth_gate@v8.4.0" "const ctx = getContext();" "set_auth_gate@v8.4.0.pl"
 apply_payload "packages/cli/src/commands/set.ts" "set_auto_client@v8.4.0" "matched = true;" "set_auto_client@v8.4.0.pl"
 
-apply_payload "packages/cli/src/commands/start.ts" "start_imports@v8.4.0" 'import { task } from "./task";' "start_imports@v8.4.0.pl" "replace_line"
-apply_payload "packages/cli/src/commands/start.ts" "start_auth_gate@v8.4.0" 'Starting workflow for Master Item' "start_auth_gate@v8.4.0.pl"
-apply_payload "packages/cli/src/commands/start.ts" "start_status_update@v8.4.0" 'Transitioning to execution for Local ID' "start_status_update@v8.4.0.pl"
+apply_payload "packages/cli/src/commands/start.ts" "start_cmd@v8.4.0" "" "start_cmd@v8.4.0.pl" "full_replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_start_syntax@v8.4.0" '  case "start":' "pulse_start_syntax@v8.4.0.pl" "replace_block" '  case "cleanup":'
 
 # 6. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
   bun install --silent
-  if bun build ./packages/cli/src/pulse.ts --outdir ./dist --target bun > /dev/null 2>&1; then
+  if bun build ./packages/cli/src/pulse.ts --outdir ./dist --target bun > /tmp/bun_build.log 2>&1; then
     echo "✅ Syntax Guard PASSED."
   else
-    echo "❌ Syntax Guard FAILED. Reverting changes..."
+    echo "❌ Syntax Guard FAILED. Check /tmp/bun_build.log"
+    cat /tmp/bun_build.log
     exit 1
   fi
 fi
