@@ -1,4 +1,4 @@
-import { gh, getItems, getFields, getProjectId } from "@pulse-oracle/sdk";
+import { gh, getItems, getFields, getProjectId, graphql } from "@pulse-oracle/sdk";
 import { getContext, getCurrentOracle } from "../config";
 
 export async function start(masterItemIndex: number) {
@@ -21,9 +21,10 @@ export async function start(masterItemIndex: number) {
 
   console.log(`🎬 Starting workflow for Master Item #${masterItemIndex}...`);
   
-  // Surgical Status Update (Directly on Master Board)
   const projectId = await getProjectId(ctx);
   const fields = await getFields(ctx);
+
+  // 1. Surgical Status Update
   const statusField = fields.find(f => f.name === "Status");
   const inProgressOpt = statusField?.options?.find(o => o.name === "In Progress");
 
@@ -34,7 +35,20 @@ export async function start(masterItemIndex: number) {
       "--single-select-option-id", inProgressOpt.id
     );
     console.log(`✅ Status updated to 'In Progress' on Master Board.`);
-  } else {
-    console.error("❌ Error: 'Status' field or 'In Progress' option not found on the board.");
+  }
+
+  // 2. Surgical Date Update (Set Start Date to today if empty)
+  const startDateField = fields.find(f => f.name === "Start Date");
+  if (startDateField && !item["start date"]) {
+    const today = new Date().toISOString().split("T")[0];
+    await graphql(`mutation {
+      updateProjectV2ItemFieldValue(input: {
+        projectId: "${projectId}",
+        itemId: "${item.id}",
+        fieldId: "${startDateField.id}",
+        value: { date: "${today}" }
+      }) { projectV2Item { id } }
+    }`);
+    console.log(`📅 Start Date set to ${today}.`);
   }
 }
