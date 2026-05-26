@@ -59,10 +59,11 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
       const targetOwner = targetParts[0];
       const targetProjNum = 1;
       
-      const rawTargetData = await gh("project", "view", String(targetProjNum), "--owner", targetOwner, "--format", "json");
-      const targetData = JSON.parse(rawTargetData);
-      const targetProjectId = targetData.id;
-      const targetFields = targetData.fields;
+      const rawTargetProj = await gh("project", "view", String(targetProjNum), "--owner", targetOwner, "--format", "json");
+      const targetProjectId = JSON.parse(rawTargetProj).id;
+      
+      const rawTargetFields = await gh("project", "field-list", String(targetProjNum), "--owner", targetOwner, "--format", "json");
+      const targetFields = JSON.parse(rawTargetFields).fields;
 
       const addResult = await gh("project", "item-add", String(targetProjNum), "--owner", targetOwner, "--url", issueUrl.trim(), "--format", "json");
       const targetItemId = JSON.parse(addResult).id;
@@ -79,7 +80,7 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
       const gatewayName = (ctx as any).gateway?.oracle;
       const clientOpt = clientField?.options?.find(o => o.name.toLowerCase() === (gatewayName || "").toLowerCase());
       if (clientField && clientOpt) {
-        remoteMutations.push(`updateClient: updateProjectV2ItemFieldValue(input: { projectId: "${targetProjectId}", itemId: "${targetItemId}", fieldId: "	ext{clientField}.id}", value: { singleSelectOptionId: "${clientOpt.id}" } }) { projectV2Item { id } }`);
+        remoteMutations.push(`updateClient: updateProjectV2ItemFieldValue(input: { projectId: "${targetProjectId}", itemId: "${targetItemId}", fieldId: "${clientField.id}", value: { singleSelectOptionId: "${clientOpt.id}" } }) { projectV2Item { id } }`);
       }
 
       const anchorField = targetFields.find(f => f.name.toLowerCase() === "anchor" || f.name.toLowerCase() === "anchar");
@@ -92,15 +93,16 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
         console.log("✅ Remote board fields initialized (Status: Delegated).");
       }
     } catch (e) {
-      console.warn("  ⚠️ Remote board update skipped: Target project #1 not found or fields incompatible.");
+      console.warn("  ⚠️ Remote board update skipped:", e.message);
     }
 
     // 6. Local Board Update (Status: In Progress)
     try {
-      const rawLocalData = await gh("project", "view", String(ctx.projectNumber), "--owner", ctx.org, "--format", "json");
-      const localData = JSON.parse(rawLocalData);
-      const localProjectId = localData.id;
-      const localFields = localData.fields;
+      const rawLocalProj = await gh("project", "view", String(ctx.projectNumber), "--owner", ctx.org, "--format", "json");
+      const localProjectId = JSON.parse(rawLocalProj).id;
+      
+      const rawLocalFields = await gh("project", "field-list", String(ctx.projectNumber), "--owner", ctx.org, "--format", "json");
+      const localFields = JSON.parse(rawLocalFields).fields;
 
       const localMutations = [];
 

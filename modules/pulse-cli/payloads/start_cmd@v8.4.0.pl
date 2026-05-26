@@ -30,11 +30,12 @@ export async function start(masterItemIndex: number) {
 
     console.log(`🎬 Starting workflow for Master Item #${masterItemIndex}...`);
     
-    // 3. Get Project Info (Optimized: One call for both ID and Fields)
-    const rawData = await gh("project", "view", String(ctx.projectNumber), "--owner", ctx.org, "--format", "json");
-    const projectData = JSON.parse(rawData);
-    const projectId = projectData.id;
-    const fields = projectData.fields;
+    // 3. Get Project Info
+    const rawProj = await gh("project", "view", String(ctx.projectNumber), "--owner", ctx.org, "--format", "json");
+    const projectId = JSON.parse(rawProj).id;
+    
+    const rawFields = await gh("project", "field-list", String(ctx.projectNumber), "--owner", ctx.org, "--format", "json");
+    const fields = JSON.parse(rawFields).fields;
 
     // 4. Surgical Updates (Status & Date)
     const statusField = fields.find(f => f.name.toLowerCase() === "status");
