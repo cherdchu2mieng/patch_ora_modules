@@ -33,6 +33,8 @@ FILES=(
   "packages/cli/src/commands/add.ts"
   "packages/cli/src/commands/board.ts"
   "packages/cli/src/commands/triage.ts"
+  "packages/cli/src/commands/set.ts"
+  "packages/cli/src/commands/start.ts"
   "packages/cli/src/config.ts"
 )
 
@@ -150,6 +152,7 @@ PY_EOF
 # 2.5 CORE INFRASTRUCTURE
 apply_payload "packages/cli/src/config.ts" "config_orchestrator_field@v8.4.0" "  repoName?: string;" "config_orchestrator_field@v8.4.0.pl"
 apply_payload "packages/cli/src/config.ts" "config_get_current_oracle@v8.2.1" "export function getContext()" "config_get_current_oracle@v8.2.1.pl"
+apply_payload "packages/cli/src/config.ts" "config_enforce_auth@v8.4.0" "export function loadConfig()" "config_enforce_auth@v8.4.0.pl"
 
 # 3. SEQUENTIAL PATCHING (CR-001)
 apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "import { gh," "add_imports@v8.4.0.pl" "replace_line"
@@ -162,7 +165,15 @@ apply_payload "packages/cli/src/commands/board.ts" "board_config_check@v8.4.0" "
 apply_payload "packages/cli/src/commands/triage.ts" "triage_config_check@v8.4.0" "const items =" "triage_config_check@v8.4.0.pl"
 apply_payload "packages/cli/src/commands/triage.ts" "triage_authority_gate@v8.4.0" "const items =" "triage_authority_gate@v8.4.0.pl"
 
-# 5. SYNTAX GUARD
+# 5. SEQUENTIAL PATCHING (CR-003)
+apply_payload "packages/cli/src/commands/set.ts" "set_auth_gate@v8.4.0" "const ctx = getContext();" "set_auth_gate@v8.4.0.pl"
+apply_payload "packages/cli/src/commands/set.ts" "set_auto_client@v8.4.0" "matched = true;" "set_auto_client@v8.4.0.pl"
+
+apply_payload "packages/cli/src/commands/start.ts" "start_imports@v8.4.0" 'import { task } from "./task";' "start_imports@v8.4.0.pl" "replace_line"
+apply_payload "packages/cli/src/commands/start.ts" "start_auth_gate@v8.4.0" 'Starting workflow for Master Item' "start_auth_gate@v8.4.0.pl"
+apply_payload "packages/cli/src/commands/start.ts" "start_status_update@v8.4.0" 'Transitioning to execution for Local ID' "start_status_update@v8.4.0.pl"
+
+# 6. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
