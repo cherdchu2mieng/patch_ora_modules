@@ -14,8 +14,16 @@ export async function start(masterItemIndex: number) {
   const assignedOracle = item.oracle;
   const current = getCurrentOracle();
 
+  // 1. Authority Check
   if (assignedOracle && current && assignedOracle.toLowerCase() !== current.toLowerCase()) {
     console.error(`❌ Authority Denied: This task is assigned to '${assignedOracle}', but you are '${current}'.`);
+    return;
+  }
+
+  // 2. Status Check (Must be 'New' to start)
+  const currentStatus = (item.status || "").toLowerCase();
+  if (currentStatus !== "new") {
+    console.error(`❌ Error: Task is already in '${item.status || 'unknown'}' state. Only 'New' tasks can be started.`);
     return;
   }
 
@@ -24,9 +32,9 @@ export async function start(masterItemIndex: number) {
   const projectId = await getProjectId(ctx);
   const fields = await getFields(ctx);
 
-  // 1. Surgical Status Update
-  const statusField = fields.find(f => f.name === "Status");
-  const inProgressOpt = statusField?.options?.find(o => o.name === "In Progress");
+  // 3. Surgical Status Update
+  const statusField = fields.find(f => f.name.toLowerCase() === "status");
+  const inProgressOpt = statusField?.options?.find(o => o.name.toLowerCase() === "in progress");
 
   if (statusField && inProgressOpt) {
     await gh(
@@ -37,8 +45,8 @@ export async function start(masterItemIndex: number) {
     console.log(`✅ Status updated to 'In Progress' on Master Board.`);
   }
 
-  // 2. Surgical Date Update (Set Start Date to today if empty)
-  const startDateField = fields.find(f => f.name === "Start Date");
+  // 4. Surgical Date Update
+  const startDateField = fields.find(f => f.name.toLowerCase() === "start date");
   if (startDateField && !item["start date"]) {
     const today = new Date().toISOString().split("T")[0];
     await graphql(`mutation {

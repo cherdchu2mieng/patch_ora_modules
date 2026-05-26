@@ -1,8 +1,8 @@
-        if (field.name === "Oracle") {
-          const clientType = opt.name.startsWith("H") ? "Human-TEAM" : (opt.name.startsWith("A") ? "AI-TEAM" : null);
+        if (field.name.toLowerCase() === "oracle") {
+          const clientType = opt.name.startsWith("H") ? "Human" : (opt.name.startsWith("A") ? "AI-Team" : null);
           if (clientType) {
-            const clientField = fields.find(f => f.name === "Client");
-            const clientOpt = clientField?.options?.find(o => o.name === clientType);
+            const clientField = fields.find(f => f.name.toLowerCase() === "client");
+            const clientOpt = clientField?.options?.find(o => o.name.toLowerCase() === clientType.toLowerCase());
             if (clientField && clientOpt) {
               await gh(
                 "project", "item-edit", "--project-id", projectId,
