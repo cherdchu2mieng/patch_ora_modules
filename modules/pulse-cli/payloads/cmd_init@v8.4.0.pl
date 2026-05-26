@@ -89,7 +89,7 @@ export async function init() {
       // Determine repo name from discovery or use default pattern
       const orchRepoName = oracleRepos[orchestratorOracle.toLowerCase()] || `${orchestratorOracle.toLowerCase()}-oracle`;
       orchestrator = {
-        repo: `${githubUser}/${orchRepoName}`, // Always use githubUser for Orchestrator
+        repo: `${githubUser}/${orchRepoName}`,
         oracle: orchestratorOracle.toLowerCase()
       };
     }
@@ -140,18 +140,6 @@ export async function init() {
     }
     fs.symlinkSync(targetPath, localLinkPath);
     console.log(`Linked: pulse.config.json -> ${targetFileName}`);
-
-    // --- Phase 7: Automatic Gateway Sync ---
-    if (isOrg && gateway) {
-      const userConfigPath = path.join(configDir, `pulse.config.${githubUser}_${projectNumber}.json`);
-      if (fs.existsSync(userConfigPath) && userConfigPath !== targetPath) {
-        console.log(`\nSyncing Gateway to User Config: ${path.basename(userConfigPath)}`);
-        const userCfg = JSON.parse(fs.readFileSync(userConfigPath, 'utf8'));
-        userCfg.gateway = gateway;
-        fs.writeFileSync(userConfigPath, JSON.stringify(userCfg, null, 2) + '\n');
-        console.log(`OK Gateway synchronized successfully.`);
-      }
-    }
 
     console.log("\nInit complete. Use 'pulse kw sync' to update keywords.");
   } finally {
