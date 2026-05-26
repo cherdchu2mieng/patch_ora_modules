@@ -22,7 +22,7 @@ export async function init() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
   try {
-    // --- Phase 1: Context Discovery (Pre-Init) ---
+    // --- Phase 1: Context Discovery ---
     const localLinkPath = path.join(process.cwd(), 'pulse.config.json');
     let previousUserConfigPath: string | undefined;
     if (fs.existsSync(localLinkPath)) {
@@ -31,16 +31,21 @@ export async function init() {
       } catch {}
     }
 
-    // --- Phase 2: Selection & Identity ---
+    // --- Phase 2: Scope & Identity Selection ---
     const scopeInput = await ask(rl, "Initialize scope: [U]ser (default) or [O]rg? (u) ");
     const isOrg = (scopeInput.trim().toLowerCase() || 'u') === 'o';
-    const orgInput = await ask(rl, isOrg ? "GitHub org: " : "GitHub user (default: current): ");
-    
-    const user = await getGHUser();
-    const effectiveOrg = orgInput.trim() || (isOrg ? "" : user);
 
-    if (isOrg && !effectiveOrg) {
-      console.error("Error: Organization name is required for Org scope.");
+    let effectiveOrg: string;
+    const user = await getGHUser();
+    
+    if (isOrg) {
+      effectiveOrg = (await ask(rl, "GitHub org: ")).trim();
+    } else {
+      effectiveOrg = (await ask(rl, `GitHub user (default: ${user}): `)).trim() || user;
+    }
+
+    if (!effectiveOrg) {
+      console.error("Error: Identity (User or Org) is required.");
       return;
     }
 
@@ -55,7 +60,7 @@ export async function init() {
     let gateway: any;
     let syncTargetUser: string | undefined;
 
-    // --- Phase 2.5: Gateway Configuration (Now for both User and Org) ---
+    // --- Phase 2.5: Gateway Configuration ---
     console.log("\n--- Gateway Configuration ---");
     const gRepo = (await ask(rl, "Gateway Repo (e.g. itinfosv/it49072-oracle, optional): ")).trim();
     if (gRepo) {
@@ -69,7 +74,7 @@ export async function init() {
       }
     }
 
-    // v8.4.0: Always ask for Orchestrator Oracle
+    // Always ask for Orchestrator Oracle
     orchestrator = (await ask(rl, "Orchestrator Oracle (e.g. gemi): ")).trim() || undefined;
 
     // --- Phase 3: Repo Discovery ---
@@ -143,7 +148,7 @@ export async function init() {
     fs.symlinkSync(targetPath, localLinkPath);
     console.log(`Linked: pulse.config.json -> ${targetFileName}`);
 
-    // --- Phase 6: Targeted Gateway Sync (Org Mode Only) ---
+    // --- Phase 6: Targeted Gateway Sync ---
     if (isOrg && gateway && syncTargetUser) {
       let userConfigPath: string | undefined;
       const explicitUserPath = path.join(configDir, `pulse.config.${syncTargetUser}_${projectNumber}.json`);
