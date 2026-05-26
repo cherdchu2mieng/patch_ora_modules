@@ -118,7 +118,8 @@ export function getContext(): PulseContext {
     org: cfg.org, 
     projectNumber: cfg.projectNumber, 
     gateway: cfg.gateway, 
-    orchestrator: cfg.orchestrator as any
+    orchestrator: cfg.orchestrator as any,
+    board: cfg.board
   };
 }
 
