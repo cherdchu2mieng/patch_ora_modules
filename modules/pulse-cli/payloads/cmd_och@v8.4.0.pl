@@ -21,13 +21,14 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
       return;
     }
 
+    // 2. Status Check (Strictly 'Assigned')
     const currentStatus = (item.status || "").toLowerCase();
-    if (currentStatus !== "assigned" && currentStatus !== "new") {
-      console.error(`❌ Error: Task must be in 'Assigned' or 'New' status (Current: ${item.status}).`);
+    if (currentStatus !== "assigned") {
+      console.error(`❌ Error: Task must be in 'Assigned' status to initiate Direct Ingress (Current: ${item.status || 'unknown'}).`);
       return;
     }
 
-    // 2. Target Resolution
+    // 3. Target Resolution
     const configRepo = (ctx as any).orchestrator?.repo;
     const resolvedTarget = targetRepo || process.env.PULSE_OCH_TARGET || configRepo;
     
@@ -38,7 +39,7 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
 
     console.log(`📡 Initiating Direct Ingress to ${resolvedTarget}...`);
 
-    // 3. Remote Issue Creation
+    // 4. Remote Issue Creation
     const anchorVal = `ITB-#${masterItemIndex}`;
     const body = [
       item.body || "",
@@ -52,39 +53,35 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
     const newIssueId = issueUrl.trim().split("/").pop();
     console.log(`✅ Created remote Issue #${newIssueId} in ${resolvedTarget}`);
 
-    // 4. Remote Board Update (Target Repo's Project #1)
+    // 5. Remote Board Update (Target Repo's Project #1)
     try {
       const targetParts = resolvedTarget.split("/");
       const targetOwner = targetParts[0];
-      const targetProjNum = 1; // Default assumed
+      const targetProjNum = 1;
       
       const rawTargetData = await gh("project", "view", String(targetProjNum), "--owner", targetOwner, "--format", "json");
       const targetData = JSON.parse(rawTargetData);
       const targetProjectId = targetData.id;
       const targetFields = targetData.fields;
 
-      // Add issue to target board
       const addResult = await gh("project", "item-add", String(targetProjNum), "--owner", targetOwner, "--url", issueUrl.trim(), "--format", "json");
       const targetItemId = JSON.parse(addResult).id;
 
       const remoteMutations = [];
       
-      // 4.1 Status = Delegated
       const statusField = targetFields.find(f => f.name.toLowerCase() === "status");
       const delOpt = statusField?.options?.find(o => o.name.toLowerCase() === "delegated");
       if (statusField && delOpt) {
         remoteMutations.push(`updateStatus: updateProjectV2ItemFieldValue(input: { projectId: "${targetProjectId}", itemId: "${targetItemId}", fieldId: "${statusField.id}", value: { singleSelectOptionId: "${delOpt.id}" } }) { projectV2Item { id } }`);
       }
 
-      // 4.2 Client = Gateway Oracle
       const clientField = targetFields.find(f => f.name.toLowerCase() === "client");
       const gatewayName = (ctx as any).gateway?.oracle;
       const clientOpt = clientField?.options?.find(o => o.name.toLowerCase() === (gatewayName || "").toLowerCase());
       if (clientField && clientOpt) {
-        remoteMutations.push(`updateClient: updateProjectV2ItemFieldValue(input: { projectId: "${targetProjectId}", itemId: "${targetItemId}", fieldId: "${clientField.id}", value: { singleSelectOptionId: "${clientOpt.id}" } }) { projectV2Item { id } }`);
+        remoteMutations.push(`updateClient: updateProjectV2ItemFieldValue(input: { projectId: "${targetProjectId}", itemId: "${targetItemId}", fieldId: "	ext{clientField}.id}", value: { singleSelectOptionId: "${clientOpt.id}" } }) { projectV2Item { id } }`);
       }
 
-      // 4.3 Anchor = ITB-#index
       const anchorField = targetFields.find(f => f.name.toLowerCase() === "anchor" || f.name.toLowerCase() === "anchar");
       if (anchorField) {
         remoteMutations.push(`updateAnchor: updateProjectV2ItemFieldValue(input: { projectId: "${targetProjectId}", itemId: "${targetItemId}", fieldId: "${anchorField.id}", value: { text: "${anchorVal}" } }) { projectV2Item { id } }`);
@@ -98,7 +95,7 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
       console.warn("  ⚠️ Remote board update skipped: Target project #1 not found or fields incompatible.");
     }
 
-    // 5. Local Board Update (Master Board)
+    // 6. Local Board Update (Status: In Progress)
     try {
       const rawLocalData = await gh("project", "view", String(ctx.projectNumber), "--owner", ctx.org, "--format", "json");
       const localData = JSON.parse(rawLocalData);
@@ -107,14 +104,12 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
 
       const localMutations = [];
 
-      // 5.1 Status = In Progress
       const localStatusField = localFields.find(f => f.name.toLowerCase() === "status");
       const ipOpt = localStatusField?.options?.find(o => o.name.toLowerCase() === "in progress");
       if (localStatusField && ipOpt) {
         localMutations.push(`updateStatus: updateProjectV2ItemFieldValue(input: { projectId: "${localProjectId}", itemId: "${item.id}", fieldId: "${localStatusField.id}", value: { singleSelectOptionId: "${ipOpt.id}" } }) { projectV2Item { id } }`);
       }
 
-      // 5.2 Anchor = AIB-#newIssueId
       const localAnchorField = localFields.find(f => f.name.toLowerCase() === "anchor" || f.name.toLowerCase() === "anchar");
       if (localAnchorField) {
         const aibAnchor = `AIB-#${newIssueId}`;
@@ -125,7 +120,6 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
         await graphql(`mutation { ${localMutations.join(" ")} }`);
         console.log("✅ Master board updated (Status: In Progress).");
       }
-
     } catch (e) {
        console.error("❌ Failed to update local board:", e.message);
     }
