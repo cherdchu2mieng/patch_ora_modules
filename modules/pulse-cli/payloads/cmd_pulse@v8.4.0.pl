@@ -1,8 +1,3 @@
-/**
- * pulse — GH Projects Master Board CLI
- * Pulse Oracle
- */
-
 import { board, timeline, add, set, fieldAdd, clearDate, scan, autoAssign, init, escalate, heartbeat, resume, remove, close, triage, scheduler, sentry, backfillWt, start, blog, cleanup, keyword, chb } from "./commands/index";
 
 const [cmd, ...args] = process.argv.slice(2);
@@ -23,11 +18,12 @@ switch (cmd) {
     break;
   case "chb": {
     if (!args[0]) {
-      console.error("Usage: pulse chb <master_item_index> [--Delegated]");
+      console.error("Usage: pulse chb <master_item_index> [--Delegated | --Returned]");
       process.exit(1);
     }
     await chb(parseInt(args[0]), {
-      delegated: args.includes("--Delegated")
+      delegated: args.includes("--Delegated"),
+      returned: args.includes("--Returned")
     });
     break;
   }
@@ -183,7 +179,7 @@ switch (cmd) {
     board, b [filter]     Show Master Board (filter by oracle/client/priority)
     timeline, t [filter]  ASCII timeline (filter by oracle/client/priority)
     add, a <title>        Create Issue + add to board
-    chb <#> [--Delegated] Change Board (Delegation ITB -> AIB)
+    chb <#> [--Delegated | --Returned] Change Board (Bidirectional Sync)
     set, s <#> <values>   Set fields (auto-detect field from value)
     field-add, fa <f> <v> Add option to field (preserves existing values!)
     clear, c <#> [field]  Clear dates (start|target|both)
@@ -220,6 +216,7 @@ switch (cmd) {
     pulse board Neo
     pulse add "New task"
     pulse chb 17 --Delegated
+    pulse chb 5 --Returned
     pulse set 1 P0 Bitkub Hermes
     pulse start 14
 `);

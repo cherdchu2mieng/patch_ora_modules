@@ -90,7 +90,7 @@ if os.path.exists(path):
         shebang = original_content.split("\n")[0] + "\n"
 
 # Idempotency Check
-if tag in original_content:
+if tag in original_content and mode != "full_replace" and mode != "create":
     print(f"  ✅ {tag} already present.")
     sys.exit(0)
 
