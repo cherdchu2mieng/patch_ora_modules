@@ -43,8 +43,7 @@ export async function och(masterItemIndex: number, targetRepo?: string) {
       "---",
       `🔗 **Ingress Anchor**: ${anchor}`,
       `👤 **Requester**: ${current || 'Human'}`
-    ].join("
-");
+    ].join("\n");
 
     const issueUrl = await gh("issue", "create", "--repo", resolvedTarget, "--title", item.title, "--body", body);
     const newIssueId = issueUrl.trim().split("/").pop();
