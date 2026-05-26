@@ -35,6 +35,7 @@ FILES=(
   "packages/cli/src/commands/triage.ts"
   "packages/cli/src/commands/set.ts"
   "packages/cli/src/commands/start.ts"
+  "packages/cli/src/commands/index.ts"
   "packages/cli/src/config.ts"
 )
 
@@ -79,11 +80,18 @@ path = os.path.join(pulse_path, target_file)
 payload_path = os.path.join(payloads_dir, payload_name)
 
 if not os.path.exists(path):
-    print(f"  ⚠️ Skipping: {path} not found")
-    sys.exit(0)
-
-with open(path, "r") as f:
-    content = f.read()
+    if mode == "create":
+        print(f"  🆕 Creating new file: {target_file}")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            f.write(f"// @pulse-patch: {tag}\n")
+        content = f"// @pulse-patch: {tag}\n"
+    else:
+        print(f"  ⚠️ Skipping: {path} not found")
+        sys.exit(0)
+else:
+    with open(path, "r") as f:
+        content = f.read()
 
 # Robust Manifest Check
 manifest_match = re.search(r"^// @pulse-patch:.*", content, re.MULTILINE)
@@ -117,8 +125,11 @@ else:
         content = f"// @pulse-patch: {tag}\n" + content
 
 # Injection
-if mode == "full_replace":
-    content = f"// @pulse-patch: {tag}\n" + payload
+if mode == "full_replace" or mode == "create":
+    if mode == "create":
+        content = f"// @pulse-patch: {tag}\n" + payload
+    else:
+        content = f"// @pulse-patch: {tag}\n" + payload
 elif mode == "replace_block":
     if start in content and end in content:
         parts = content.split(start, 1)
@@ -169,11 +180,15 @@ apply_payload "packages/cli/src/commands/triage.ts" "triage_authority_gate@v8.4.
 
 # 5. SEQUENTIAL PATCHING (CR-003)
 apply_payload "packages/cli/src/commands/set.ts" "set_cmd@v8.4.0" "" "set_cmd@v8.4.0.pl" "full_replace"
-
 apply_payload "packages/cli/src/commands/start.ts" "start_cmd@v8.4.0" "" "start_cmd@v8.4.0.pl" "full_replace"
 apply_payload "packages/cli/src/pulse.ts" "pulse_start_syntax@v8.4.0" '  case "start":' "pulse_start_syntax@v8.4.0.pl" "replace_block" '  case "cleanup":'
 
-# 6. SYNTAX GUARD
+# 6. SEQUENTIAL PATCHING (CR-004)
+apply_payload "packages/cli/src/commands/och.ts" "cmd_och@v8.4.0" "" "cmd_och@v8.4.0.pl" "create"
+apply_payload "packages/cli/src/commands/index.ts" "index_och@v8.4.0" "export { board }" "index_och@v8.4.0.pl"
+apply_payload "packages/cli/src/pulse.ts" "pulse_och_syntax@v8.4.0" 'case "add":' "pulse_och_syntax@v8.4.0.pl"
+
+# 7. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
