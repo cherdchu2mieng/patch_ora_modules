@@ -1,6 +1,6 @@
 #!/bin/bash
 # Pulse Patch Orchestrator v8.4.0 (Ironclad v2.2)
-# Sequential, Manifest-Driven, Idempotent
+# Cumulative, Manifest-Driven, Idempotent
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <pulse-cli-path> [--restore]"
@@ -35,6 +35,8 @@ FILES=(
   "packages/cli/src/commands/triage.ts"
   "packages/cli/src/commands/set.ts"
   "packages/cli/src/commands/start.ts"
+  "packages/cli/src/commands/init.ts"
+  "packages/cli/src/commands/keyword.ts"
   "packages/cli/src/commands/index.ts"
   "packages/cli/src/config.ts"
 )
@@ -92,7 +94,6 @@ else:
     if mode != "create":
         print(f"  ⚠️ Skipping: {path} not found")
         sys.exit(0)
-    # For 'create' mode, we proceed even if it doesn't exist
 
 if already_present:
     print(f"  ✅ {tag} already present.")
@@ -105,7 +106,7 @@ if not os.path.exists(payload_path):
 with open(payload_path, "r") as f:
     payload = f.read().strip()
 
-if mode == "create":
+if mode == "create" and not os.path.exists(path):
     print(f"  🆕 Creating new file: {target_file}")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     content = f"// @pulse-patch: {tag}\n" + payload
@@ -116,7 +117,8 @@ else:
         lines = content.split("\n")
         for i, line in enumerate(lines):
             if line.startswith("// @pulse-patch:"):
-                lines[i] = line.rstrip() + f" {tag}"
+                if tag not in line.split():
+                    lines[i] = line.rstrip() + f" {tag}"
                 break
         content = "\n".join(lines)
     else:
@@ -127,7 +129,7 @@ else:
             content = f"// @pulse-patch: {tag}\n" + content
 
     # Injection
-    if mode == "full_replace":
+    if mode == "full_replace" or mode == "create":
         content = f"// @pulse-patch: {tag}\n" + payload
     elif mode == "replace_block":
         if start in content and end in content:
@@ -161,28 +163,28 @@ PY_EOF
   fi
 }
 
-# 2.5 CORE INFRASTRUCTURE
-apply_payload "packages/cli/src/config.ts" "config_orchestrator_field@v8.4.0" "  repoName?: string;" "config_orchestrator_field@v8.4.0.pl"
-apply_payload "packages/cli/src/config.ts" "config_get_current_oracle@v8.2.1" "export function getContext()" "config_get_current_oracle@v8.2.1.pl"
-apply_payload "packages/cli/src/config.ts" "config_enforce_auth@v8.4.0" "export function loadConfig()" "config_enforce_auth@v8.4.0.pl"
+# 2.5 CORE INFRASTRUCTURE (Sacred + New)
+apply_payload "packages/cli/src/config.ts" "cmd_config@v8.4.0" "" "cmd_config@v8.4.0.pl" "full_replace"
 
-# 3. SEQUENTIAL PATCHING (CR-001/002)
+# 3. COMMANDS (Cumulative Sacred)
+apply_payload "packages/cli/src/commands/init.ts" "init_org_mode@v8.2.1" "" "init_org_mode@v8.2.1.pl" "full_replace"
+apply_payload "packages/cli/src/commands/keyword.ts" "cmd_keyword@v8.2.1" "" "cmd_keyword@v8.2.1.pl" "full_replace"
+
+# 4. COMMANDS (v8.4.0 Features)
 apply_payload "packages/cli/src/commands/add.ts" "cmd_add@v8.4.0" "" "cmd_add@v8.4.0.pl" "full_replace"
 apply_payload "packages/cli/src/commands/board.ts" "cmd_board@v8.4.0" "" "cmd_board@v8.4.0.pl" "full_replace"
 apply_payload "packages/cli/src/commands/triage.ts" "cmd_triage@v8.4.0" "" "cmd_triage@v8.4.0.pl" "full_replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" 'case "set":'
-
-# 5. SEQUENTIAL PATCHING (CR-003)
 apply_payload "packages/cli/src/commands/set.ts" "set_cmd@v8.4.0" "" "set_cmd@v8.4.0.pl" "full_replace"
 apply_payload "packages/cli/src/commands/start.ts" "start_cmd@v8.4.0" "" "start_cmd@v8.4.0.pl" "full_replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_start_syntax@v8.4.0" '  case "start":' "pulse_start_syntax@v8.4.0.pl" "replace_block" '  case "cleanup":'
-
-# 6. SEQUENTIAL PATCHING (CR-004)
 apply_payload "packages/cli/src/commands/och.ts" "cmd_och@v8.4.0" "" "cmd_och@v8.4.0.pl" "create"
+
+# 5. REGISTRY & ENTRY
 apply_payload "packages/cli/src/commands/index.ts" "index_och@v8.4.0" "export { board }" "index_och@v8.4.0.pl"
+apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" 'case "set":'
+apply_payload "packages/cli/src/pulse.ts" "pulse_start_syntax@v8.4.0" '  case "start":' "pulse_start_syntax@v8.4.0.pl" "replace_block" '  case "cleanup":'
 apply_payload "packages/cli/src/pulse.ts" "pulse_och_syntax@v8.4.0" 'case "add":' "pulse_och_syntax@v8.4.0.pl"
 
-# 7. SYNTAX GUARD
+# 6. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
