@@ -83,7 +83,9 @@ if not os.path.exists(path):
 with open(path, "r") as f:
     content = f.read()
 
-if f"// @pulse-patch: {tag}" in content:
+# Robust Manifest Check (v2.1)
+manifest_match = re.search(r'// @pulse-patch:.*', content)
+if manifest_match and tag in manifest_match.group(0).split():
     print(f"  ✅ {tag} already present.")
     sys.exit(0)
 
