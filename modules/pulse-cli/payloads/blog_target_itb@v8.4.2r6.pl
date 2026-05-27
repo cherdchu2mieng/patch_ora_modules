@@ -44,9 +44,9 @@
     "</details>",
     "",
     "*— Oracle (Pulse)*",
-  ].filter(Boolean).join("\\n");
+  ].filter(Boolean).join("\n");
 
-  const fullBody = bodyContent + "\\n" + provenance;
+  const fullBody = bodyContent + "\n" + provenance;
 
   const category = opts.category || cfg.blog?.category || "Show and tell";
   console.log(`Publishing: \"${title}\" → ${targetOrg}/${targetRepo} [${category}]`);

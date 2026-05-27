@@ -150,7 +150,7 @@ PY_EOF
 }
 
 # 3. BASELINE SEQUENTIAL PATCHING
-apply_payload "packages/sdk/src/types.ts" "sdk_blog_opts@v8.4.2r4" "export interface BlogOpts {" "sdk_blog_opts@v8.4.2r4.pl" "replace_block" "}"
+apply_payload "packages/sdk/src/types.ts" "sdk_blog_opts@v8.4.2r6" "export interface BlogOpts {" "sdk_blog_opts@v8.4.2r6.pl" "replace_block" "}"
 
 IMPORT_LINE='import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from "@pulse-oracle/sdk";'
 apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "$IMPORT_LINE" "add_imports@v8.4.0.pl" "replace_line"
@@ -167,22 +167,22 @@ apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add
   }'
 
 # 5. REFINEMENT: PROVENANCE URL & CONFIG (CR-006.v2)
-apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2r4" "  blog?: {" "config_patch_ws@v8.4.2r4.pl" "replace_line"
+apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2r6" "  blog?: {" "config_patch_ws@v8.4.2r6.pl" "replace_line"
 
 # 6. ORCHESTRATOR BROADCAST AUTHORITY (CR-006.v1 Refinement)
-apply_payload "packages/cli/src/pulse.ts" "pulse_config_imports@v8.4.2r4" "import { board," "pulse_config_imports@v8.4.2r4.pl" "replace_line"
-apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2r4" 'const [cmd, ...args] = process.argv.slice(2);' "blog_authority_itb@v8.4.2r4.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "pulse_config_imports@v8.4.2r6" "import { board," "pulse_config_imports@v8.4.2r6.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2r6" 'const [cmd, ...args] = process.argv.slice(2);' "blog_authority_itb@v8.4.2r6.pl" "replace_line"
 
 # Syntax Clean
 BLOCK_START='case "blog": {'
 BLOCK_END='    break;
   }'
-apply_payload "packages/cli/src/pulse.ts" "blog_syntax_itb@v8.4.2r4" "$BLOCK_START" "blog_syntax_itb@v8.4.2r4.pl" "replace_block" "$BLOCK_END"
+apply_payload "packages/cli/src/pulse.ts" "blog_syntax_itb@v8.4.2r6" "$BLOCK_START" "blog_syntax_itb@v8.4.2r6.pl" "replace_block" "$BLOCK_END"
 
 # Unified Target & Provenance logic
 TARGET_START='  const blogRepo = cfg.blog?.repo || getRepoName();'
 TARGET_END='  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);'
-apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2r4" "$TARGET_START" "blog_target_itb@v8.4.2r4.pl" "replace_block" "$TARGET_END"
+apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2r6" "$TARGET_START" "blog_target_itb@v8.4.2r6.pl" "replace_block" "$TARGET_END"
 
 # 8. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
