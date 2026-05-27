@@ -11,8 +11,9 @@
 
   const patchWs = opts.patchWorkspace || cfg.patchWorkspace;
   if (patchWs && repoPath.startsWith("ψ/writing/")) {
-    const mappedPath = repoPath.replace(/^ψ\/writing\//, "docs/requirements/");
+    const mappedPath = "docs/requirements/" + repoPath.replace(/^ψ\/writing\//, "");
     sourceUrl = `${patchWs.replace(/\/$/, "")}/blob/main/${mappedPath.replace(/ψ/g, "%CF%88")}`;
+    repoPath = mappedPath;
     console.log(`  Traceability: mapped to Patch Workspace 🛡️`);
   }
   const commitUrl = `https://github.com/${org}/${repo}/commit/${gitInfo.hash}`;
@@ -43,5 +44,5 @@
   const fullBody = bodyContent + "\\n" + provenance;
 
   const category = opts.category || cfg.blog?.category || "Show and tell";
-  console.log(`Publishing: "${title}" → ${targetOrg}/${targetRepo} [${category}]`);
+  console.log(`Publishing: \"${title}\" → ${targetOrg}/${targetRepo} [${category}]`);
   const discussion = await createDiscussion(targetOrg, targetRepo, title, fullBody, category);

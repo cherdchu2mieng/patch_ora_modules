@@ -114,11 +114,16 @@ else:
 
 # Injection
 if mode == "replace_block":
-    pattern = re.escape(start) + r".*?" + re.escape(end)
-    if re.search(pattern, content, re.DOTALL):
-        content = re.sub(pattern, payload, content, flags=re.DOTALL)
+    idx_start = content.find(start)
+    if idx_start != -1:
+        idx_end = content.find(end, idx_start + len(start))
+        if idx_end != -1:
+             content = content[:idx_start] + payload + content[idx_end + len(end):]
+        else:
+             print(f"  ❌ Error: Block end anchor not found in {target_file}")
+             sys.exit(1)
     else:
-        print(f"  ❌ Error: Block start/end not found in {target_file}")
+        print(f"  ❌ Error: Block start anchor not found in {target_file}")
         sys.exit(1)
 elif mode == "replace_line":
     if start in content:
@@ -144,8 +149,9 @@ PY_EOF
   fi
 }
 
-apply_payload "packages/sdk/src/types.ts" "sdk_blog_opts@v8.4.2" "export interface BlogOpts {" "sdk_blog_opts@v8.4.2.pl" "replace_line"
 # 3. BASELINE SEQUENTIAL PATCHING
+apply_payload "packages/sdk/src/types.ts" "sdk_blog_opts@v8.4.2r1" "export interface BlogOpts {" "sdk_blog_opts@v8.4.2r1.pl" "replace_block" "}"
+
 IMPORT_LINE='import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from "@pulse-oracle/sdk";'
 apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "$IMPORT_LINE" "add_imports@v8.4.0.pl" "replace_line"
 apply_payload "packages/cli/src/commands/add.ts" "add_config_imports@v8.4.0" "import { getContext, getOracleRepos } from \"../config\";" "add_config_imports@v8.4.0.pl" "replace_line"
@@ -161,17 +167,22 @@ apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add
   }'
 
 # 5. REFINEMENT: PROVENANCE URL & CONFIG (CR-006.v2)
-apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2" "  blog?: {" "config_patch_ws@v8.4.2.pl" "replace_line"
+apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2r1" "  blog?: {" "config_patch_ws@v8.4.2r1.pl" "replace_line"
 
 # 6. ORCHESTRATOR BROADCAST AUTHORITY (CR-006.v1 Refinement)
-apply_payload "packages/cli/src/pulse.ts" "pulse_config_imports@v8.4.2" "import { board," "pulse_config_imports@v8.4.2.pl" "replace_line"
-apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2" 'const [cmd, ...args] = process.argv.slice(2);' "blog_authority_itb@v8.4.2.pl" "replace_line"
-apply_payload "packages/cli/src/pulse.ts" "blog_syntax_itb@v8.4.2" '  case "blog": {' "blog_syntax_itb@v8.4.2.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "pulse_config_imports@v8.4.2r1" "import { board," "pulse_config_imports@v8.4.2r1.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2r1" 'const [cmd, ...args] = process.argv.slice(2);' "blog_authority_itb@v8.4.2r1.pl" "replace_line"
 
-# 7. UNIFIED BLOG LOGIC (Routing + Provenance)
-BLOG_BLOCK_START='  const blogRepo = cfg.blog?.repo || getRepoName();'
-BLOG_BLOCK_END='  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);'
-apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2" "$BLOG_BLOCK_START" "blog_target_itb@v8.4.2.pl" "replace_block" "$BLOG_BLOCK_END"
+# Syntax Clean
+BLOCK_START='case "blog": {'
+BLOCK_END='    break;
+  }'
+apply_payload "packages/cli/src/pulse.ts" "blog_syntax_itb@v8.4.2r1" "$BLOCK_START" "blog_syntax_itb@v8.4.2r1.pl" "replace_block" "$BLOCK_END"
+
+# Unified Target & Provenance logic
+TARGET_START='  const blogRepo = cfg.blog?.repo || getRepoName();'
+TARGET_END='  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);'
+apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2r1" "$TARGET_START" "blog_target_itb@v8.4.2r1.pl" "replace_block" "$TARGET_END"
 
 # 8. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."

@@ -10,3 +10,5 @@
       category: parseFlag("--category"),
       patchWorkspace: wsUrl
     });
+    break;
+  }
