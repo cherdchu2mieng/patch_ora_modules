@@ -7,12 +7,18 @@
     ? "ψ/writing/" + file.split("ψ/writing/")[1] 
     : file.replace(new RegExp(`.*${repo}/`), "");
     
-  let sourceUrl = `https://github.com/${org}/${repo}/blob/main/${repoPath.replace(/ψ/g, "%CF%88")}`;
+  let sourceUrl = `https://github.com/${org}/${repo}/blob/master/${repoPath.replace(/ψ/g, "%CF%88")}`;
 
   const patchWs = opts.patchWorkspace || cfg.patchWorkspace;
   if (patchWs && repoPath.startsWith("ψ/writing/")) {
     const mappedPath = "docs/requirements/" + repoPath.replace(/^ψ\/writing\//, "");
-    sourceUrl = `${patchWs.replace(/\/$/, "")}/blob/main/${mappedPath.replace(/ψ/g, "%CF%88")}`;
+    const wsBase = patchWs.replace(/\/$/, "");
+    
+    if (wsBase.includes("/blob/")) {
+      sourceUrl = `${wsBase}/${mappedPath.replace(/ψ/g, "%CF%88")}`;
+    } else {
+      sourceUrl = `${wsBase}/blob/master/${mappedPath.replace(/ψ/g, "%CF%88")}`;
+    }
     repoPath = mappedPath;
     console.log(`  Traceability: mapped to Patch Workspace 🛡️`);
   }
@@ -23,10 +29,9 @@
     "---",
     "**Provenance**",
     patchWs ? `- Patch Workspace: ${patchWs}` : "",
-    `- Session: \`${sessionId.slice(0, 8)}\``,
     `- Commit: [\`${gitInfo.hash}\`](${commitUrl}) — ${gitInfo.message}`,
     `- Author: ${gitInfo.author} (${gitInfo.date.slice(0, 10)})`,
-    `- Source: [\`${repoPath}\`](${sourceUrl})`,
+    `- Source: ${sourceUrl}`,
     `- Published: ${timestamp} ICT`,
     "",
     "<details><summary>Recent commits</summary>",
