@@ -1,3 +1,8 @@
+---
+date: 2026-05-27
+published: https://github.com/itinfosv/pulse-oracle/discussions/15
+---
+
 # Final Cumulative Test Plan (ACP-20260527-001)
 **RFC**: RFC-20260525-PULSE-PROTOCOL-ALIGN-V1
 **Project**: Pulse-CLI Enhancement
