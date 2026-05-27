@@ -83,7 +83,7 @@ if not os.path.exists(path):
 with open(path, "r") as f:
     content = f.read()
 
-# Robust Manifest Check (v2.1)
+# Robust Manifest Check
 manifest_match = re.search(r'// @pulse-patch:.*', content)
 if manifest_match and tag in manifest_match.group(0).split():
     print(f"  ✅ {tag} already present.")
@@ -159,29 +159,20 @@ apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return
 apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" '    break;
   }'
 
-# 4. BIDIRECTIONAL SYNC & AUTHORITY (CR-004)
-AUTH_START='    // 2. Authority Check'
-AUTH_END='    // 3. Mode Selection & Execution'
-apply_payload "packages/cli/src/commands/chb.ts" "chb_authority@v8.4.1" "$AUTH_START" "chb_authority@v8.4.1.pl" "replace_block" "$AUTH_END"
-
-INGRESS_START='      // Update AIB Board'
-INGRESS_END='      // Update ITB Board (Local)'
-apply_payload "packages/cli/src/commands/chb.ts" "chb_ingress_dynamic@v8.4.1" "$INGRESS_START" "chb_ingress_dynamic@v8.4.1.pl" "replace_block" "$INGRESS_END"
-
-# 5. REFINEMENT: PROVENANCE URL (CR-006.v2)
+# 5. REFINEMENT: PROVENANCE URL & CONFIG (CR-006.v2)
 apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2" "  blog?: {" "config_patch_ws@v8.4.2.pl" "replace_line"
 
-BLOG_BLOCK_START='  const repoPath = file.replace(new RegExp(`.*${repo}/`), "");'
-BLOG_BLOCK_END='  const sourceUrl = `https://github.com/${org}/${repo}/blob/main/${encodedPath}`;'
-apply_payload "packages/cli/src/commands/blog.ts" "blog_provenance_patch_ws@v8.4.2" "$BLOG_BLOCK_START" "blog_provenance_patch_ws@v8.4.2.pl" "replace_block" "$BLOG_BLOCK_END"
-
 # 6. ORCHESTRATOR BROADCAST AUTHORITY (CR-006.v1 Refinement)
-apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2" "const [cmd, ...args] = process.argv.slice(2);" "blog_authority_itb@v8.4.2.pl" "replace_line"
-apply_payload "packages/cli/src/pulse.ts" "blog_syntax_itb@v8.4.2" "case \"blog\": {" "blog_syntax_itb@v8.4.2.pl" "replace_line"
-apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2" "  const blogRepo = cfg.blog?.repo || getRepoName();" "blog_target_itb@v8.4.2.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "pulse_config_imports@v8.4.2" "import { board," "pulse_config_imports@v8.4.2.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2" 'const [cmd, ...args] = process.argv.slice(2);' "blog_authority_itb@v8.4.2.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "blog_syntax_itb@v8.4.2" '  case "blog": {' "blog_syntax_itb@v8.4.2.pl" "replace_line"
 
+# 7. UNIFIED BLOG LOGIC (Routing + Provenance)
+BLOG_BLOCK_START='  const blogRepo = cfg.blog?.repo || getRepoName();'
+BLOG_BLOCK_END='  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);'
+apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2" "$BLOG_BLOCK_START" "blog_target_itb@v8.4.2.pl" "replace_block" "$BLOG_BLOCK_END"
 
-# 7. SYNTAX GUARD
+# 8. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
