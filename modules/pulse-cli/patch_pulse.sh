@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pulse Patch Orchestrator v8.4.0 (Ironclad v2.2)
+# Pulse Patch Orchestrator v8.4.2 (Refinement v2)
 # Sequential, Manifest-Driven, Idempotent
 
 if [ -z "$1" ]; then
@@ -9,7 +9,7 @@ fi
 
 export PULSE_PATH=$(realpath "$1")
 export PAYLOADS_DIR="$(dirname "$0")/payloads"
-echo "🌊 Applying MASTER Patch v8.4.0 (Ironclad v2.2) to $PULSE_PATH..."
+echo "🌊 Applying MASTER Patch v8.4.2 (Refinement v2) to $PULSE_PATH..."
 
 # 0. RESTORE LOGIC
 if [[ "$2" == "--restore" ]]; then
@@ -30,7 +30,9 @@ echo "📂 Backup: $BACKUP_DIR"
 
 FILES=(
   "packages/cli/src/pulse.ts"
+  "packages/cli/src/config.ts"
   "packages/cli/src/commands/add.ts"
+  "packages/cli/src/commands/blog.ts"
   "packages/cli/src/commands/chb.ts"
 )
 
@@ -110,14 +112,11 @@ else:
 
 # Injection
 if mode == "replace_block":
-    # More robust block replacement using regex
     pattern = re.escape(start) + r".*?" + re.escape(end)
     if re.search(pattern, content, re.DOTALL):
         content = re.sub(pattern, payload, content, flags=re.DOTALL)
     else:
         print(f"  ❌ Error: Block start/end not found in {target_file}")
-        print(f"  Start: [{start}]")
-        print(f"  End: [{end}]")
         sys.exit(1)
 elif mode == "replace_line":
     if start in content:
@@ -143,7 +142,7 @@ PY_EOF
   fi
 }
 
-# 3. SEQUENTIAL PATCHING (CR-001)
+# 3. BASELINE SEQUENTIAL PATCHING
 IMPORT_LINE='import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from "@pulse-oracle/sdk";'
 apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "$IMPORT_LINE" "add_imports@v8.4.0.pl" "replace_line"
 apply_payload "packages/cli/src/commands/add.ts" "add_config_imports@v8.4.0" "import { getContext, getOracleRepos } from \"../config\";" "add_config_imports@v8.4.0.pl" "replace_line"
@@ -167,7 +166,14 @@ INGRESS_START='      // Update AIB Board'
 INGRESS_END='      // Update ITB Board (Local)'
 apply_payload "packages/cli/src/commands/chb.ts" "chb_ingress_dynamic@v8.4.1" "$INGRESS_START" "chb_ingress_dynamic@v8.4.1.pl" "replace_block" "$INGRESS_END"
 
-# 5. SYNTAX GUARD
+# 5. REFINEMENT: PROVENANCE URL (CR-006.v2)
+apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2" "  blog?: {" "config_patch_ws@v8.4.2.pl" "replace_line"
+
+BLOG_BLOCK_START='  const repoPath = file.replace(new RegExp(`.*${repo}/`), "");'
+BLOG_BLOCK_END='  const sourceUrl = `https://github.com/${org}/${repo}/blob/main/${encodedPath}`;'
+apply_payload "packages/cli/src/commands/blog.ts" "blog_provenance_patch_ws@v8.4.2" "$BLOG_BLOCK_START" "blog_provenance_patch_ws@v8.4.2.pl" "replace_block" "$BLOG_BLOCK_END"
+
+# 6. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
@@ -180,4 +186,4 @@ if command -v bun &> /dev/null; then
   fi
 fi
 
-echo "✅ MASTER Patch v8.4.0 Applied successfully."
+echo "✅ MASTER Patch v8.4.2 Applied successfully."
