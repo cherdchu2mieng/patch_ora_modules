@@ -175,7 +175,13 @@ BLOG_BLOCK_START='  const repoPath = file.replace(new RegExp(`.*${repo}/`), "");
 BLOG_BLOCK_END='  const sourceUrl = `https://github.com/${org}/${repo}/blob/main/${encodedPath}`;'
 apply_payload "packages/cli/src/commands/blog.ts" "blog_provenance_patch_ws@v8.4.2" "$BLOG_BLOCK_START" "blog_provenance_patch_ws@v8.4.2.pl" "replace_block" "$BLOG_BLOCK_END"
 
-# 6. SYNTAX GUARD
+# 6. ORCHESTRATOR BROADCAST AUTHORITY (CR-006.v1 Refinement)
+apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2" "const [cmd, ...args] = process.argv.slice(2);" "blog_authority_itb@v8.4.2.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "blog_syntax_itb@v8.4.2" "case \"blog\": {" "blog_syntax_itb@v8.4.2.pl" "replace_line"
+apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2" "  const blogRepo = cfg.blog?.repo || getRepoName();" "blog_target_itb@v8.4.2.pl" "replace_line"
+
+
+# 7. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
