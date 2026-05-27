@@ -9,8 +9,8 @@
 ## 2. Technical Scope
 - **Nature of Change**: Foundational Refactoring & Standardization
 - **Affected Components**: 
-    - `packages/cli/src/commands/init.ts` (Sequence & Discovery Logic)
-    - `packages/cli/src/config.ts` (Interface & Context API)
+    - [`packages/cli/src/commands/init.ts`](https://github.com/Pulse-Oracle/pulse-cli/blob/main/packages/cli/src/commands/init.ts) (Sequence & Discovery Logic)
+    - [`packages/cli/src/config.ts`](https://github.com/Pulse-Oracle/pulse-cli/blob/main/packages/cli/src/config.ts) (Interface & Context API)
 - **Key Implementation Details**:
     1. **Upfront Identity Gathering**: Collected all identity markers (`githubUser`, `githubOrg`) at the start to eliminate redundant prompts.
     2. **Standard Prompt Sequence**:

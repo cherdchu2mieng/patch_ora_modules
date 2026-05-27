@@ -10,7 +10,7 @@
 ## 2. Technical Scope
 - **Nature of Change**: Authority Enforcement Refinement (Oracle Identity Gate)
 - **Affected Components**: 
-    - `packages/cli/src/commands/close.ts`
+    - [`packages/cli/src/commands/close.ts`](https://github.com/Pulse-Oracle/pulse-cli/blob/main/packages/cli/src/commands/close.ts)
 - **Key Implementation Details**:
     1. **Oracle Authority Gate (NEW 🛡️)**: 
         - Add identity verification before closing a task.
