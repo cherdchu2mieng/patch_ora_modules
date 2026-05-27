@@ -9,8 +9,8 @@
 ## 2. Technical Scope
 - **Nature of Change**: Modification
 - **Affected Components**: 
-    - `packages/cli/src/commands/add.ts`
-    - `packages/cli/src/pulse.ts` (CLI argument parsing)
+    - [`packages/cli/src/commands/add.ts`](https://github.com/Pulse-Oracle/pulse-cli/blob/main/packages/cli/src/commands/add.ts)
+    - [`packages/cli/src/pulse.ts`](https://github.com/Pulse-Oracle/pulse-cli/blob/main/packages/cli/src/pulse.ts) (CLI argument parsing)
 - **Logic Description**:
     1. **Pre-check**: แก้ไข `add.ts` ให้ทำการตรวจสอบไฟล์ `pulse.config.json` ใน Directory ปัจจุบัน (Current Working Directory)
     2. **Error Handling**: หากไม่พบไฟล์คอนฟิก ให้แสดงข้อความ `Run pulse init first.` และหยุดการทำงาน

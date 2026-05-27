@@ -9,8 +9,8 @@
 ## 2. Technical Scope
 - **Nature of Change**: Enhanced Visualization & Governance
 - **Affected Components**: 
-    - `packages/cli/src/commands/board.ts` (10-column expansion)
-    - `packages/cli/src/commands/triage.ts` (Authority implementation)
+    - [`packages/cli/src/commands/board.ts`](https://github.com/Pulse-Oracle/pulse-cli/blob/main/packages/cli/src/commands/board.ts) (10-column expansion)
+    - [`packages/cli/src/commands/triage.ts`](https://github.com/Pulse-Oracle/pulse-cli/blob/main/packages/cli/src/commands/triage.ts) (Authority implementation)
 - **Key Implementation Details**:
     1. **Unified 10-Column Board**: Expanded the master board visualization to include the following columns:
         - `#`, `Title`, `Pri`, `Client`, `Oracle`, `Repo`, `WT`, `Status`, **`Anchor`**, `Dates`.

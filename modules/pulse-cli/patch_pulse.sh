@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pulse Patch Orchestrator v8.4.0 (Ironclad v2.2)
+# Pulse Patch Orchestrator v8.4.2 (Refinement v2)
 # Sequential, Manifest-Driven, Idempotent
 
 if [ -z "$1" ]; then
@@ -9,7 +9,7 @@ fi
 
 export PULSE_PATH=$(realpath "$1")
 export PAYLOADS_DIR="$(dirname "$0")/payloads"
-echo "🌊 Applying MASTER Patch v8.4.0 (Ironclad v2.2) to $PULSE_PATH..."
+echo "🌊 Applying MASTER Patch v8.4.2 (Refinement v2) to $PULSE_PATH..."
 
 # 0. RESTORE LOGIC
 if [[ "$2" == "--restore" ]]; then
@@ -30,7 +30,9 @@ echo "📂 Backup: $BACKUP_DIR"
 
 FILES=(
   "packages/cli/src/pulse.ts"
+  "packages/cli/src/config.ts"
   "packages/cli/src/commands/add.ts"
+  "packages/cli/src/commands/blog.ts"
   "packages/cli/src/commands/chb.ts"
 )
 
@@ -81,7 +83,9 @@ if not os.path.exists(path):
 with open(path, "r") as f:
     content = f.read()
 
-if f"// @pulse-patch: {tag}" in content:
+# Robust Manifest Check
+manifest_match = re.search(r'// @pulse-patch:.*', content)
+if manifest_match and tag in manifest_match.group(0).split():
     print(f"  ✅ {tag} already present.")
     sys.exit(0)
 
@@ -110,14 +114,16 @@ else:
 
 # Injection
 if mode == "replace_block":
-    # More robust block replacement using regex
-    pattern = re.escape(start) + r".*?" + re.escape(end)
-    if re.search(pattern, content, re.DOTALL):
-        content = re.sub(pattern, payload, content, flags=re.DOTALL)
+    idx_start = content.find(start)
+    if idx_start != -1:
+        idx_end = content.find(end, idx_start + len(start))
+        if idx_end != -1:
+             content = content[:idx_start] + payload + content[idx_end + len(end):]
+        else:
+             print(f"  ❌ Error: Block end anchor not found in {target_file}")
+             sys.exit(1)
     else:
-        print(f"  ❌ Error: Block start/end not found in {target_file}")
-        print(f"  Start: [{start}]")
-        print(f"  End: [{end}]")
+        print(f"  ❌ Error: Block start anchor not found in {target_file}")
         sys.exit(1)
 elif mode == "replace_line":
     if start in content:
@@ -143,7 +149,9 @@ PY_EOF
   fi
 }
 
-# 3. SEQUENTIAL PATCHING (CR-001)
+# 3. BASELINE SEQUENTIAL PATCHING
+apply_payload "packages/sdk/src/types.ts" "sdk_blog_opts@v8.4.2r6" "export interface BlogOpts {" "sdk_blog_opts@v8.4.2r6.pl" "replace_block" "}"
+
 IMPORT_LINE='import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from "@pulse-oracle/sdk";'
 apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "$IMPORT_LINE" "add_imports@v8.4.0.pl" "replace_line"
 apply_payload "packages/cli/src/commands/add.ts" "add_config_imports@v8.4.0" "import { getContext, getOracleRepos } from \"../config\";" "add_config_imports@v8.4.0.pl" "replace_line"
@@ -158,16 +166,25 @@ apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return
 apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" '    break;
   }'
 
-# 4. BIDIRECTIONAL SYNC & AUTHORITY (CR-004)
-AUTH_START='    // 2. Authority Check'
-AUTH_END='    // 3. Mode Selection & Execution'
-apply_payload "packages/cli/src/commands/chb.ts" "chb_authority@v8.4.1" "$AUTH_START" "chb_authority@v8.4.1.pl" "replace_block" "$AUTH_END"
+# 5. REFINEMENT: PROVENANCE URL & CONFIG (CR-006.v2)
+apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2r6" "  blog?: {" "config_patch_ws@v8.4.2r6.pl" "replace_line"
 
-INGRESS_START='      // Update AIB Board'
-INGRESS_END='      // Update ITB Board (Local)'
-apply_payload "packages/cli/src/commands/chb.ts" "chb_ingress_dynamic@v8.4.1" "$INGRESS_START" "chb_ingress_dynamic@v8.4.1.pl" "replace_block" "$INGRESS_END"
+# 6. ORCHESTRATOR BROADCAST AUTHORITY (CR-006.v1 Refinement)
+apply_payload "packages/cli/src/pulse.ts" "pulse_config_imports@v8.4.2r6" "import { board," "pulse_config_imports@v8.4.2r6.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2r6" 'const [cmd, ...args] = process.argv.slice(2);' "blog_authority_itb@v8.4.2r6.pl" "replace_line"
 
-# 5. SYNTAX GUARD
+# Syntax Clean
+BLOCK_START='case "blog": {'
+BLOCK_END='    break;
+  }'
+apply_payload "packages/cli/src/pulse.ts" "blog_syntax_itb@v8.4.2r6" "$BLOCK_START" "blog_syntax_itb@v8.4.2r6.pl" "replace_block" "$BLOCK_END"
+
+# Unified Target & Provenance logic
+TARGET_START='  const blogRepo = cfg.blog?.repo || getRepoName();'
+TARGET_END='  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);'
+apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2r6" "$TARGET_START" "blog_target_itb@v8.4.2r6.pl" "replace_block" "$TARGET_END"
+
+# 8. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
@@ -180,4 +197,4 @@ if command -v bun &> /dev/null; then
   fi
 fi
 
-echo "✅ MASTER Patch v8.4.0 Applied successfully."
+echo "✅ MASTER Patch v8.4.2 Applied successfully."

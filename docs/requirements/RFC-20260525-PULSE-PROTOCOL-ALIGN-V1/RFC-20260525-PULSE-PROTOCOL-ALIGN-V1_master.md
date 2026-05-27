@@ -10,11 +10,11 @@
 - **Responsible Agent**: Gemi Oracle 🌊
 - **Stability Impact**: High (Core Protocol Logic)
 - **Security Level**: Standard (Authority Gates)
-- **Target Version**: v8.4.0
-- **Date Time**: 2026-05-25 11:30 (Initial) | 2026-05-27 11:30 (Blog Refined)
+- **Target Version**: v8.4.2
+- **Date Time**: 2026-05-25 11:30 (Initial) | 2026-05-27 15:00 (Traceability Refined)
 - **Source**: Human Direction (cherdchu2mieng) & Operational Mandates
-- **Patch Workspace Repo**: /home/a2it49072/ghq/github.com/cherdchu2mieng/patch_ora_modules
-- **Target Repo Path**: /home/a2it49072/ghq/github.com/Pulse-Oracle/pulse-cli
+- **Patch Workspace Repo**: /home/a2it49072/ghq/github.com/cherdchu2mieng/patch_ora_modules ([GitHub](https://github.com/cherdchu2mieng/patch_ora_modules))
+- **Target Repo Path**: /home/a2it49072/ghq/github.com/Pulse-Oracle/pulse-cli ([GitHub](https://github.com/Pulse-Oracle/pulse-cli))
 - **Status**: Closed (Phase 5 - Sacred Memory Locked 🛡️🔒)
 
 ## 2. Scope Consensus (The 4-Layer Logic)
@@ -44,11 +44,11 @@
 | CR-PULSE-ALIGN-001 | Command: add | Board-specific defaults & mandatory 'New' status | [CR-PULSE-ALIGN-001_detail.md] | **SACRED 🛡️🔒** |
 | CR-PULSE-ALIGN-002 | Command: board/tr | 10-col Board & Triage authority gates | [CR-PULSE-ALIGN-002_detail.md] | **SACRED 🛡️🔒** |
 | CR-PULSE-ALIGN-003 | Command: set/start | Authority enforcement & auto-client updates | [CR-PULSE-ALIGN-003_detail.md] | **SACRED 🛡️🔒** |
-| CR-PULSE-ALIGN-004 | Command: chb | Bidirectional Sync (Ingress & Return Flow) | [CR-PULSE-ALIGN-004_detail.md] | **SACRED 🛡️🔒** |
-| CR-PULSE-ALIGN-006 | Command: blog | Orchestrator Broadcast (Repl. task command) | [CR-PULSE-ALIGN-006.v1_detail.md] | **SACRED 🛡️🔒** |
-| CR-PULSE-ALIGN-007 | Command: close | Context-aware closure (Closed vs Done) | [CR-PULSE-ALIGN-007.v1_detail.md] | **Refinement Required (Requested by Human) ⏳** |
+| CR-PULSE-ALIGN-004 | Command: chb | Bidirectional Sync (Ingress & Return Flow) | [CR-PULSE-ALIGN-004.v1_detail.md] | **SACRED 🛡️🔒** |
+| CR-PULSE-ALIGN-006 | Command: blog | Orchestrator Broadcast (Repl. task command) | [CR-PULSE-ALIGN-006.v2_detail.md] | **SACRED 🛡️🔒** |
+| CR-PULSE-ALIGN-007 | Command: close | Context-aware closure (Closed vs Done) | [CR-PULSE-ALIGN-007.v1_detail.md] | **SACRED 🛡️🔒** |
 
 ## 4. RFC-Level Summary (Post-Closure)
 - **Phase 1-5 Status**: All Change Requests have been refined, audited, and confirmed as **Tested from human = Sacred**.
-- **Current State**: The full bidirectional protocol is now locked in main memory.
-- **Next Step**: Proceed to Phase 6 implementation for pending modules.
+- **Current State**: The full bidirectional protocol is now locked in main memory with remote traceability.
+- **Next Step**: Maintain the v8.4.2 baseline and prepare for next RFC cycle.

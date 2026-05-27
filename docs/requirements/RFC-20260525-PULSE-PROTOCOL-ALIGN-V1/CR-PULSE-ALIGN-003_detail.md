@@ -9,8 +9,8 @@
 ## 2. Technical Scope
 - **Nature of Change**: Authority Enforcement & Auto-Client Logic
 - **Affected Components**: 
-    - `packages/cli/src/commands/set.ts`
-    - `packages/cli/src/commands/start.ts`
+    - [`packages/cli/src/commands/set.ts`](https://github.com/Pulse-Oracle/pulse-cli/blob/main/packages/cli/src/commands/set.ts)
+    - [`packages/cli/src/commands/start.ts`](https://github.com/Pulse-Oracle/pulse-cli/blob/main/packages/cli/src/commands/start.ts)
 - **Key Implementation Details**:
     1. **Orchestrator Gate (set)**: Added `enforceAuth()` to restrict board modification to the designated Orchestrator.
     2. **Auto-Client Protocol**: Implemented automatic detection of Oracle group:

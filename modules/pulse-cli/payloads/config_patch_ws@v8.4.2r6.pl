@@ -1,0 +1,2 @@
+  patchWorkspace?: string;
+  blog?: {
