@@ -2,7 +2,8 @@
 
 ## 1. CR Information
 - **Parent RFC**: RFC-20260525-PULSE-PROTOCOL-ALIGN-V1
-- **Target Module**: pulse-cli (Command: board, triage)
+- **Target Module**: pulse-cli (Commands: board, triage)
+- **Execution Skill**: build-patch
 - **Status**: Verified 🛡️ (Tested from human = Sacred)
 
 ## 2. Technical Scope

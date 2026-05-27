@@ -11,26 +11,31 @@
 - **Stability Impact**: High (Core Protocol Logic)
 - **Security Level**: Standard (Authority Gates)
 - **Target Version**: v8.4.0
-- **Date Time**: 2026-05-25 11:30 (Initial) | 2026-05-26 16:15 (Sacred Refined)
+- **Date Time**: 2026-05-25 11:30 (Initial) | 2026-05-27 11:30 (Blog Refined)
 - **Source**: Human Direction (cherdchu2mieng) & Operational Mandates
 - **Patch Workspace Repo**: /home/a2it49072/ghq/github.com/cherdchu2mieng/patch_ora_modules
 - **Target Repo Path**: /home/a2it49072/ghq/github.com/Pulse-Oracle/pulse-cli
-- **Status**: Open (Phase 4 Master Drafting - Comprehensive Review)
+- **Status**: Closed (Phase 5 - Sacred Memory Locked 🛡️🔒)
 
-## 2. Scope Consensus (The 3-Layer Logic)
+## 2. Scope Consensus (The 4-Layer Logic)
 
 ### 2.1 Requirement Mapping (AI Synthesis)
-- ปรับปรุง Pulse CLI ให้รองรับโปรโตคอลการสื่อสารสองทิศทาง (Bidirectional) ระหว่าง ITB และ AIB โดยใช้การตรวจสอบสิทธิ์แบบอิงพื้นที่ทำงาน (Workspace-Based Authority) เพื่อความปลอดภัยและความเสถียรสูงสุด
+- ปรับปรุง Pulse CLI ให้รองรับโปรโตคอลการสื่อสารสองทิศทาง (Bidirectional) ระหว่าง ITB และ AIB
+- **Orchestrator Empowerment**: เพิ่มขีดความสามารถให้ Orchestrator ในการสื่อสารผ่านคำสั่ง `blog` และบังคับใช้สิทธิ์การเข้าถึงข้อมูลตามบทบาท (Role-Based Authority)
 
 ### 2.2 Human Supplemental Input
-- **Identity Enforcement**: ต้องระบุตัวตนจากชื่อโฟลเดอร์ Workspace และต้องตรงกับฟิลด์ Oracle ในบอร์ดถึงจะอนุญาตให้รันคำสั่งได้
-- **Board Mapping**: กำหนด ITB เป็นบอร์ดทีม (itinfosv) และ AIB เป็นบอร์ดส่วนตัวของ Oracle (cherdchu2mieng)
-- **Cycle Closure**: การกลับสู่วงจรปิดงาน (Return/Task) ต้องอัปเดตสถานะข้ามบอร์ดได้ถูกต้องแม่นยำผ่าน Anchor
+- **Identity Enforcement**: ระบุตัวตนจากชื่อโฟลเดอร์ Workspace ต้องตรงกับฟิลด์ Oracle ในบอร์ด
+- **Broadcast Standard**: ยกเลิกการใช้งาน `pulse task` สำหรับระบบ Gateway และเปลี่ยนมาใช้ **`pulse blog`** สำหรับการประกาศ Discussion ไปยังทีม (`itinfosv/pulse-oracle`)
+- **Authority**: เฉพาะ Orchestrator เท่านั้นที่มีสิทธิ์ใช้คำสั่ง `blog` ในนามของทีม
 
 ### 2.3 Information Gathering (Research)
-- **IG-1 (Technical Baseline)**: ตรวจสอบโมดูล `init.ts`, `add.ts`, `set.ts`, `chb.ts`, `task.ts`, และ `close.ts` พบความพร้อมในการปรับปรุงโครงสร้าง
-- **IG-2 (Integration Points)**: ใช้ GitHub Project V2 SDK ในการซิงค์ข้อมูลผ่าน GraphQL และ REST API (gh CLI)
-- **IG-3 (Operational Constraints)**: การทำงานต้องแยกกันระหว่าง "Brain" (gemi-oracle) และ "Patch Workspace" (patch_ora_modules) อย่างเคร่งครัด
+- **IG-1 (Technical Baseline)**: ตรวจสอบโมดูล `init.ts`, `add.ts`, `set.ts`, `chb.ts`, `blog.ts`, และ `close.ts`
+- **IG-2 (Integration)**: ใช้ GitHub Project V2 SDK สำหรับบอร์ด และ GraphQL สำหรับ Discussions
+- **IG-3 (Legacy Audit)**: ตรวจสอบโค้ด `blog.ts` เดิมพบว่ารองรับการทำ Provenance และ Frontmatter Sync เรียบร้อยแล้ว
+
+### 2.4 Implementation Governance (Layer 4)
+- **Execution Skill**: `build-patch`
+- **Protocol**: ทุก Change Request ใน RFC นี้จะถูกดำเนินการด้วย skill `build-patch` เพื่อผลิต payloads ที่เป็นมาตรฐาน v8.4.2 และประกันความเสถียรของระบบ (Sacred Status)
 
 ## 3. Change Request (CR) Portfolio
 | CR ID | Module | Technical Objective | Detail File | Status |
@@ -38,10 +43,10 @@
 | CR-PULSE-ALIGN-000 | System Init | Standardized Init & Identity Architecture | [CR-PULSE-ALIGN-000_detail.md] | **SACRED 🛡️🔒** |
 | CR-PULSE-ALIGN-001 | Command: add | Board-specific defaults & mandatory 'New' status | [CR-PULSE-ALIGN-001_detail.md] | **SACRED 🛡️🔒** |
 | CR-PULSE-ALIGN-002 | Command: board/tr | 10-col Board & Triage authority gates | [CR-PULSE-ALIGN-002_detail.md] | **SACRED 🛡️🔒** |
-| CR-PULSE-ALIGN-003 | Command: set/start | Authority enforcement & auto-client updates | [CR-PULSE-ALIGN-003_detail.md] | **SACRED BLUEPRINT 🛡️** |
+| CR-PULSE-ALIGN-003 | Command: set/start | Authority enforcement & auto-client updates | [CR-PULSE-ALIGN-003_detail.md] | **SACRED 🛡️🔒** |
 | CR-PULSE-ALIGN-004 | Command: chb | Bidirectional Sync (Ingress & Return Flow) | [CR-PULSE-ALIGN-004_detail.md] | **SACRED 🛡️🔒** |
-| CR-PULSE-ALIGN-006 | Command: task | Gateway Cycle Closure & Broadcast logic | [CR-PULSE-ALIGN-006_detail.md] | **SACRED BLUEPRINT 🛡️** |
-| CR-PULSE-ALIGN-007 | Command: close | Context-aware closure (Closed vs Done) | [CR-PULSE-ALIGN-007_detail.md] | **SACRED BLUEPRINT 🛡️** |
+| CR-PULSE-ALIGN-006 | Command: blog | Orchestrator Broadcast (Repl. task command) | [CR-PULSE-ALIGN-006.v1_detail.md] | **SACRED 🛡️🔒** |
+| CR-PULSE-ALIGN-007 | Command: close | Context-aware closure (Closed vs Done) | [CR-PULSE-ALIGN-007.v1_detail.md] | **Refinement Required (Requested by Human) ⏳** |
 
 ## 4. RFC-Level Summary (Post-Closure)
 - **Phase 1-5 Status**: All Change Requests have been refined, audited, and confirmed as **Tested from human = Sacred**.
