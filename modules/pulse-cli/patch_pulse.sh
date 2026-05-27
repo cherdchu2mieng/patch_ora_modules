@@ -144,6 +144,7 @@ PY_EOF
   fi
 }
 
+apply_payload "packages/sdk/src/types.ts" "sdk_blog_opts@v8.4.2" "export interface BlogOpts {" "sdk_blog_opts@v8.4.2.pl" "replace_line"
 # 3. BASELINE SEQUENTIAL PATCHING
 IMPORT_LINE='import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from "@pulse-oracle/sdk";'
 apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "$IMPORT_LINE" "add_imports@v8.4.0.pl" "replace_line"

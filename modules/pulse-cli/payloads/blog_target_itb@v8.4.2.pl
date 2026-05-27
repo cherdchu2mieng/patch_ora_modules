@@ -9,7 +9,7 @@
     
   let sourceUrl = `https://github.com/${org}/${repo}/blob/main/${repoPath.replace(/ψ/g, "%CF%88")}`;
 
-  const patchWs = cfg.patchWorkspace;
+  const patchWs = opts.patchWorkspace || cfg.patchWorkspace;
   if (patchWs && repoPath.startsWith("ψ/writing/")) {
     const mappedPath = repoPath.replace(/^ψ\/writing\//, "docs/requirements/");
     sourceUrl = `${patchWs.replace(/\/$/, "")}/blob/main/${mappedPath.replace(/ψ/g, "%CF%88")}`;
@@ -21,6 +21,7 @@
     "",
     "---",
     "**Provenance**",
+    patchWs ? `- Patch Workspace: ${patchWs}` : "",
     `- Session: \`${sessionId.slice(0, 8)}\``,
     `- Commit: [\`${gitInfo.hash}\`](${commitUrl}) — ${gitInfo.message}`,
     `- Author: ${gitInfo.author} (${gitInfo.date.slice(0, 10)})`,
@@ -37,7 +38,7 @@
     "</details>",
     "",
     "*— Oracle (Pulse)*",
-  ].join("\\n");
+  ].filter(Boolean).join("\\n");
 
   const fullBody = bodyContent + "\\n" + provenance;
 
