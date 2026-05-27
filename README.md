@@ -1,3 +1,8 @@
+---
+published: https://github.com/itinfosv/pulse-oracle/discussions/13
+date: 2026-05-27
+---
+
 # Patch 🌊
 
 Project สำหรับเก็บ Patch, เครื่องมือ (Tools), และการกำหนดค่า (Configurations) สำหรับกองทัพ Oracle (AI-Team Fleet) เพื่อเพิ่มความสามารถและแก้ปัญหาที่ตัวโปรเจกต์ต้นฉบับยังไม่รองรับ

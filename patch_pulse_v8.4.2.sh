@@ -40,6 +40,7 @@ FILES=(
   "packages/cli/src/commands/index.ts"
   "packages/cli/src/config.ts"
   "packages/cli/src/commands/blog.ts"
+  "packages/cli/src/commands/close.ts"
 )
 
 for f in "${FILES[@]}"; do
@@ -175,6 +176,8 @@ apply_payload "packages/cli/src/commands/chb.ts" "cmd_chb@v8.4.0" "" "cmd_chb@v8
 
 # 4.5 COMMANDS (v8.4.2 Refinements)
 apply_payload "packages/cli/src/commands/blog.ts" "blog_orchestrator@v8.4.2" "" "blog_orchestrator@v8.4.2.pl" "full_replace"
+apply_payload "packages/cli/src/commands/close.ts" "close_cmd@v8.4.2" "" "close_cmd@v8.4.2.pl" "full_replace"
+  "packages/cli/src/commands/close.ts"
 
 # 5. REGISTRY & ENTRY
 apply_payload "packages/cli/src/commands/index.ts" "index_cumulative@v8.4.0" "" "index_cumulative@v8.4.0.pl" "full_replace"
