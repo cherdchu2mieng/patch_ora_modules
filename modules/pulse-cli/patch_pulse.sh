@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pulse Patch Orchestrator v8.2.2 (Ironclad v2.1)
+# Pulse Patch Orchestrator v8.4.0 (Ironclad v2.2)
 # Sequential, Manifest-Driven, Idempotent
 
 if [ -z "$1" ]; then
@@ -9,7 +9,7 @@ fi
 
 export PULSE_PATH=$(realpath "$1")
 export PAYLOADS_DIR="$(dirname "$0")/payloads"
-echo "🌊 Applying MASTER Patch v8.2.2 (Ironclad v2.1) to $PULSE_PATH..."
+echo "🌊 Applying MASTER Patch v8.4.0 (Ironclad v2.2) to $PULSE_PATH..."
 
 # 0. RESTORE LOGIC
 if [[ "$2" == "--restore" ]]; then
@@ -29,15 +29,9 @@ mkdir -p "$BACKUP_DIR"
 echo "📂 Backup: $BACKUP_DIR"
 
 FILES=(
-  "packages/sdk/src/types.ts"
-  "packages/sdk/src/github.ts"
-  "packages/cli/src/config.ts"
-  "packages/cli/src/commands/init.ts"
-  "packages/cli/src/commands/index.ts"
-  "packages/cli/src/commands/add.ts"
-  "packages/cli/src/commands/board.ts"
-  "packages/cli/src/commands/triage.ts"
   "packages/cli/src/pulse.ts"
+  "packages/cli/src/commands/add.ts"
+  "packages/cli/src/commands/chb.ts"
 )
 
 for f in "${FILES[@]}"; do
@@ -51,27 +45,43 @@ done
 function apply_payload() {
   local target_file="$1"
   local feature="$2"
-  local anchor="$3"
+  local anchor_start="$3"
   local payload_name="$4"
-  local mode="${5:-replace}" # replace, append, overwrite, swap
+  local mode="${5:-insert}"
+  local anchor_end="$6"
 
   echo "🛠️  Checking $feature in $(basename "$target_file")..."
   
-  python3 - <<PY_EOF
-import os, sys
+  export T_FILE="$target_file"
+  export T_TAG="$feature"
+  export T_START="$anchor_start"
+  export T_PAYLOAD="$payload_name"
+  export T_MODE="$mode"
+  export T_END="$anchor_end"
 
-path = os.path.join(os.environ['PULSE_PATH'], '$target_file')
-payload_path = os.path.join(os.environ['PAYLOADS_DIR'], '$payload_name')
+  python3 - <<'PY_EOF'
+import os, sys, re
+
+pulse_path = os.environ.get("PULSE_PATH")
+payloads_dir = os.environ.get("PAYLOADS_DIR")
+target_file = os.environ.get("T_FILE")
+tag = os.environ.get("T_TAG")
+start = os.environ.get("T_START")
+payload_name = os.environ.get("T_PAYLOAD")
+mode = os.environ.get("T_MODE")
+end = os.environ.get("T_END")
+
+path = os.path.join(pulse_path, target_file)
+payload_path = os.path.join(payloads_dir, payload_name)
 
 if not os.path.exists(path):
     print(f"  ⚠️ Skipping: {path} not found")
     sys.exit(0)
 
-with open(path, 'r') as f:
+with open(path, "r") as f:
     content = f.read()
 
-tag = "$feature"
-if f"@pulse-patch:" in content and tag in content.split("@pulse-patch:")[1].split("\n")[0]:
+if f"// @pulse-patch: {tag}" in content:
     print(f"  ✅ {tag} already present.")
     sys.exit(0)
 
@@ -79,45 +89,50 @@ if not os.path.exists(payload_path):
     print(f"  ❌ Error: Payload file not found: {payload_path}")
     sys.exit(1)
 
-with open(payload_path, 'r') as f:
+with open(payload_path, "r") as f:
     payload = f.read().strip()
 
-# Manifest Management (Ironclad v2.1)
-manifest_line = f"// @pulse-patch: {tag}"
+# Manifest Management
 if "// @pulse-patch:" in content:
-    lines = content.split('\n')
+    lines = content.split("\n")
     for i, line in enumerate(lines):
         if line.startswith("// @pulse-patch:"):
-            lines[i] = line.rstrip() + f" {tag}"
+            if tag not in line:
+                lines[i] = line.rstrip() + f" {tag}"
             break
-    content = '\n'.join(lines)
+    content = "\n".join(lines)
 else:
-    lines = content.split('\n')
+    lines = content.split("\n")
     if lines[0].startswith("#!"):
-        content = lines[0] + "\n" + manifest_line + "\n" + '\n'.join(lines[1:])
+        content = lines[0] + "\n" + f"// @pulse-patch: {tag}" + "\n" + "\n".join(lines[1:])
     else:
-        content = f"{manifest_line}\n" + content
+        content = f"// @pulse-patch: {tag}\n" + content
 
 # Injection
-anchor = r'''$anchor'''
-if '$mode' == 'replace':
-    if anchor in content:
-        content = content.replace(anchor, payload + "\n" + anchor)
+if mode == "replace_block":
+    # More robust block replacement using regex
+    pattern = re.escape(start) + r".*?" + re.escape(end)
+    if re.search(pattern, content, re.DOTALL):
+        content = re.sub(pattern, payload, content, flags=re.DOTALL)
     else:
-        print(f"  ❌ Error: Anchor not found in {path}")
+        print(f"  ❌ Error: Block start/end not found in {target_file}")
+        print(f"  Start: [{start}]")
+        print(f"  End: [{end}]")
         sys.exit(1)
-elif '$mode' == 'swap':
-    if anchor in content:
-        content = content.replace(anchor, payload)
+elif mode == "replace_line":
+    if start in content:
+        content = content.replace(start, payload)
     else:
-        print(f"  ❌ Error: Anchor not found in {path}")
+        print(f"  ❌ Error: Line anchor not found in {target_file}")
         sys.exit(1)
-elif '$mode' == 'overwrite':
-    content = payload
-elif '$mode' == 'append':
-    content = content.rstrip() + "\n" + payload + "\n"
+else: # Default: insert before start
+    if start in content:
+        content = content.replace(start, payload + "\n" + start)
+    else:
+        print(f"  ❌ Error: Anchor not found in {target_file}")
+        sys.exit(1)
 
-with open(path, 'w') as f:
+with open(path, "w") as f:
     f.write(content)
 print(f"  ✨ Applied {tag}")
 PY_EOF
@@ -128,72 +143,41 @@ PY_EOF
   fi
 }
 
-# 3. SEQUENTIAL PATCHING
-# SDK
-apply_payload "packages/sdk/src/types.ts" "sdk_types@v8.2.1" "projectNumber: number;" "sdk_types@v8.2.1.pl" "replace"
-apply_payload "packages/sdk/src/github.ts" "sdk_github_export@v8.2.1" "export async function setFieldOnItem" "sdk_github_export@v8.2.1.pl" "swap"
+# 3. SEQUENTIAL PATCHING (CR-001)
+IMPORT_LINE='import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from "@pulse-oracle/sdk";'
+apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "$IMPORT_LINE" "add_imports@v8.4.0.pl" "replace_line"
+apply_payload "packages/cli/src/commands/add.ts" "add_config_imports@v8.4.0" "import { getContext, getOracleRepos } from \"../config\";" "add_config_imports@v8.4.0.pl" "replace_line"
+apply_payload "packages/cli/src/commands/add.ts" "add_config_logic@v8.4.0" "const ctx = getContext();" "add_config_logic@v8.4.0.pl"
 
-# Config
-apply_payload "packages/cli/src/config.ts" "config_interface@v8.2.1" "oracleRepos: Record<string, string>;" "config_interface@v8.2.1.pl" "replace"
-apply_payload "packages/cli/src/config.ts" "config_get_current_oracle@v8.2.1" "export function getAllContexts()" "config_get_current_oracle@v8.2.1.pl" "replace"
-apply_payload "packages/cli/src/config.ts" "config_get_context_return@v8.2.1" "return { org: cfg.org, projectNumber: cfg.projectNumber" "config_get_context_return@v8.2.1.pl" "replace"
+REPO_BLOCK_START='  let targetRepo = opts.repo;'
+REPO_BLOCK_END='  if (!targetRepo) targetRepo = `${ctx.org}/pulse-oracle`;'
+apply_payload "packages/cli/src/commands/add.ts" "add_repo_lock@v8.4.0" "$REPO_BLOCK_START" "add_repo_lock@v8.4.0.pl" "replace_block" "$REPO_BLOCK_END"
 
-# Init
-apply_payload "packages/cli/src/commands/init.ts" "init_org_mode@v8.2.1" "export async function init()" "init_org_mode@v8.2.1.pl" "overwrite"
+apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return addedItemId;" "add_field_sync@v8.4.0.pl"
 
-# Add Command
-apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.2.1" "import { getContext, getOracleRepos" "add_imports@v8.2.1.pl" "replace"
-apply_payload "packages/cli/src/commands/add.ts" "add_current_oracle_check@v8.2.1" "const oracleLower = opts.oracle?.toLowerCase();" "add_current_oracle_check@v8.2.1.pl" "swap"
-apply_payload "packages/cli/src/commands/add.ts" "add_routing_logic@v8.2.1" "let targetRepo = opts.repo;" "add_routing_logic@v8.2.1.pl" "swap"
-apply_payload "packages/cli/src/commands/add.ts" "add_field_updates@v8.2.1" "return addedItemId;" "add_field_updates@v8.2.1.pl" "replace"
+apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" '    break;
+  }'
 
-# Pulse Entry
-apply_payload "packages/cli/src/pulse.ts" "pulse_imports@v8.2.1" "import { board" "pulse_imports@v8.2.1.pl" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_enforce_auth@v8.2.1" "const [cmd, ...args]" "pulse_enforce_auth@v8.2.1.pl" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_set@v8.2.1" "if (!args[0] || !args[1]) {" "pulse_auth_call@v8.2.1.pl" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_auth_call_triage@v8.2.1" "await triage();" "pulse_auth_call@v8.2.1.pl" "replace"
-apply_payload "packages/cli/src/pulse.ts" "pulse_command_cases@v8.2.2" "case \"board\":" "pulse_command_cases@v8.2.2.pl" "swap"
-apply_payload "packages/cli/src/pulse.ts" "pulse_version_string@v8.2.2" "Pulse Oracle" "pulse_version_string@v8.2.1.pl" "replace"
+# 4. BIDIRECTIONAL SYNC & AUTHORITY (CR-004)
+AUTH_START='    // 2. Authority Check'
+AUTH_END='    // 3. Mode Selection & Execution'
+apply_payload "packages/cli/src/commands/chb.ts" "chb_authority@v8.4.1" "$AUTH_START" "chb_authority@v8.4.1.pl" "replace_block" "$AUTH_END"
 
-# 4. COMMAND REGISTRY (New/Overwritten Files)
-echo "📂 Creating command files..."
-apply_payload "packages/cli/src/commands/board.ts" "board_v2@v8.2.2" "" "cmd_board@v8.2.2.pl" "overwrite"
-apply_payload "packages/cli/src/commands/triage.ts" "triage_cmd@v8.2.2" "" "cmd_triage@v8.2.2.pl" "overwrite"
-
-cp "$PAYLOADS_DIR/cmd_task@v8.2.2.pl" "$PULSE_PATH/packages/cli/src/commands/task.ts"
-cp "$PAYLOADS_DIR/cmd_keyword@v8.2.1.pl" "$PULSE_PATH/packages/cli/src/commands/keyword.ts"
-cp "$PAYLOADS_DIR/cmd_go@v8.2.2.pl" "$PULSE_PATH/packages/cli/src/commands/go.ts"
-cp "$PAYLOADS_DIR/cmd_close@v8.2.2.pl" "$PULSE_PATH/packages/cli/src/commands/close.ts"
-cp "$PAYLOADS_DIR/cmd_start@v8.2.2.pl" "$PULSE_PATH/packages/cli/src/commands/start.ts"
-
-# Register in index.ts
-python3 - <<EOF
-import os
-path = os.path.join(os.environ['PULSE_PATH'], 'packages/cli/src/commands/index.ts')
-with open(path, 'r') as f: content = f.read()
-for cmd in ['keyword', 'task', 'go', 'close', 'start']:
-    line = f'export {{ {cmd} }} from "./{cmd}";'
-    if line not in content:
-        content = content.strip() + f'\n{line}\n'
-with open(path, 'w') as f: f.write(content)
-EOF
-echo "✓ Command index updated."
+INGRESS_START='      // Update AIB Board'
+INGRESS_END='      // Update ITB Board (Local)'
+apply_payload "packages/cli/src/commands/chb.ts" "chb_ingress_dynamic@v8.4.1" "$INGRESS_START" "chb_ingress_dynamic@v8.4.1.pl" "replace_block" "$INGRESS_END"
 
 # 5. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
-  echo "📦 Installing dependencies (bun install)..."
   bun install --silent
-  echo "🏗️  Building (bun build)..."
   if bun build ./packages/cli/src/pulse.ts --outdir ./dist --target bun > /tmp/bun_build.log 2>&1; then
     echo "✅ Syntax Guard PASSED."
   else
     echo "❌ Syntax Guard FAILED. Check /tmp/bun_build.log"
     exit 1
   fi
-else
-  echo "⚠️ Bun not found. Skipping automated Syntax Guard."
 fi
 
-echo "✅ MASTER Patch v8.2.2 Applied successfully."
+echo "✅ MASTER Patch v8.4.0 Applied successfully."
