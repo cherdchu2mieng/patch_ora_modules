@@ -1,3 +1,8 @@
+---
+published: https://github.com/itinfosv/pulse-oracle/discussions/13
+date: 2026-05-27
+---
+
 # Patch 🌊
 
 Project สำหรับเก็บ Patch, เครื่องมือ (Tools), และการกำหนดค่า (Configurations) สำหรับกองทัพ Oracle (AI-Team Fleet) เพื่อเพิ่มความสามารถและแก้ปัญหาที่ตัวโปรเจกต์ต้นฉบับยังไม่รองรับ
@@ -33,13 +38,13 @@ chmod +x bin/oracle-patch
 - **Wake All Support**: แทรก logic `maw wake all` เพื่อเปิดการทำงาน Oracle ทั้งหมดในคำสั่งเดียว
 - **Patched Indicator**: เพิ่มเครื่องหมาย `(patched 🌊)` ใน `maw --version`
 
-### 2. `pulse-cli` (Pulse Management) - **v7.11 ล่าสุด** 🌊
+### 2. `pulse-cli` (Pulse Management) - **v8.2.1 Stable 🛡️** 🌊
 โมดูลสำหรับปรับปรุงระบบจัดการภารกิจ (Master Board) และการรักษาความปลอดภัยของสิทธิ์
-- **Restoration & Perfection (v7.11)**: กู้คืนระบบ Org Mode และการ Routing ผ่าน Gateway ที่สูญหาย พร้อมรองรับเครื่องหมาย `#` ในคำสั่ง `set`
+- **Restoration & Perfection (v8.2.1)**: กู้คืนระบบ Org Mode และการ Routing ผ่าน Gateway ที่สูญหาย พร้อมรองรับเครื่องหมาย `#` ในคำสั่ง `set`
 - **Secure Authority (v7.10)**: ระบบตรวจสอบสิทธิ์ Orchestrator แบบ "Secure by Default" และการระบุตัวตนอัตโนมัติจาก Directory
 - **Robust Patching v1.1**: ใช้มาตรฐานการฉีดโค้ดแบบ Raw String ป้องกันปัญหา Newline Trap และความเสียหายของ Syntax
-- **Comprehensive Master Patch**: รวมความสามารถทั้งหมดตั้งแต่ v7.5 - v7.11 ไว้ในสคริปต์เดียว (Idempotent Baseline Reset)
-- **Patched Indicator**: อัปเดตเป็น `(patched 🌊 v7.11)` ใน `pulse --version`
+- **Comprehensive Master Patch**: รวมความสามารถทั้งหมดตั้งแต่ v7.5 - v8.2.1 ไว้ในสคริปต์เดียว (Idempotent Baseline Reset)
+- **Patched Indicator**: อัปเดตเป็น `(patched 🌊 v8.2.1)` ใน `pulse --version`
 
 *ดูรายละเอียดการปรับปรุงทั้งหมดได้ที่ [modules/pulse-cli/HISTORY.md](modules/pulse-cli/HISTORY.md)*
 
@@ -70,11 +75,11 @@ chmod +x bin/oracle-patch
 1. **Patch**: `./bin/oracle-patch pulse-cli [path_to_pulse_cli]`
 2. **Init**: `pulse init` ในโฟลเดอร์โครงการ
    - เลือกระดับ User สำหรับโครงการส่วนตัว (ระบุ Orchestrator เพื่อสิทธิ์การจัดการ)
-   - เลือกระดับ Org สำหรับโครงการทีม (ถามข้อมูล Gateway อัตโนมัติ v7.11)
+   - เลือกระดับ Org สำหรับโครงการทีม (ถามข้อมูล Gateway อัตโนมัติ v8.2.1)
 3. **Task Management**:
    - `pulse add "หัวข้อ"`: สร้างงานลงบอร์ดกลาง (Default: pulse-oracle)
-   - `pulse add org "หัวข้อ"`: ส่งงานผ่าน Dynamic Gateway ตามคอนฟิก (v7.11)
-   - `pulse set 39 P1 sky`: ตั้งค่าฟิลด์แบบ Auto-detect (รองรับ `#39` v7.11)
+   - `pulse add org "หัวข้อ"`: ส่งงานผ่าน Dynamic Gateway ตามคอนฟิก (v8.2.1)
+   - `pulse set 39 P1 sky`: ตั้งค่าฟิลด์แบบ Auto-detect (รองรับ `#39` v8.2.1)
 4. **Keyword Sync**: รันคำสั่งเพื่อซิงค์ตัวตนเข้าบอร์ดกลาง
    ```bash
    pulse keyword sync  # หรือ pulse kw sync

@@ -2,7 +2,45 @@
 
 Detailed version history, requirement breakdowns, and architectural impact logs.
 
+## [v8.2.2] - 2026-05-19
+### 🏁 Status: Pending Human Verification
+- **Enhanced Visualization**: Responsive 9-column board with advanced filtering by Oracle, Client, Priority, or Status.
+- **Compound Lifecycle**: Added `pulse start` which sequentially executes `pulse task` (Pull & Anchor) and `pulse go` (Set In Progress).
+- **Symmetrical Closure**: `pulse close` (formerly `done`) now closes local issues, syncs Master Board status, and provides cleanup advice.
+- **Governance Triage**: Locked `pulse tr` to the designated Orchestrator and implemented bidirectional status synchronization.
+
+## [v8.2.1-stable] - 2026-05-19
+### 🏁 Status: Tested from human = Sacred 🛡️
+- **Pulse Init**: Fully stabilized User/Org scopes, interactive discovery, and dynamic gateway cross-sync.
+- **Keyword Sync**: Robust extraction from CLAUDE.md with standard routing array alignment.
+- **Governance**: Stability Protocol established and distributed across workspace metadata.
+
+
 ---
+
+## [v8.2.1] - 2026-05-18 18:30
+### 🎯 Detailed Requirement Breakdown
+1. **Ironclad v2.1 Standard Implementation**: Complete transition to manifest-driven patching.
+   - **Feature-Based Payloads**: Deployed `.pch` modules for all core features.
+   - **Internal Tracking (Manifest Tags)**: Every modified artifact contains `// @pulse-patch:` header.
+   - **Sequential Orchestrator**: Refactored `patch_pulse.sh` with check-switches and manifest management.
+2. **Command: pulse done <ID>**: Implementation of Requirement 4 (Bidirectional closing).
+   - **Affected**: done.ts (New), index.ts (Registry)
+3. **Command: pulse go <ID>**: Implementation of Requirement 3 (Sync status to In Progress).
+   - **Affected**: go.ts (New), index.ts (Registry)
+4. **Enhanced Authorization**: Refined `enforceAuth()` logic with manifest tracking.
+
+---
+
+## [v8.2] - 2026-05-18 2026-05-18 11:15
+### 🎯 Detailed Requirement Breakdown
+1. **Command: pulse task <ID>**: Enable pulling assigned tasks from the Master Board into local repositories.
+   - **Validation**: Strict oracle assignment check (Current Oracle must match Item Oracle).
+   - **Cross-Linking**: Automatic generation of `Parent: org/repo#ID` metadata in local issue body.
+   - **Bidirectional Sync**: Master Board issue receives a comment linking back to the local task.
+2. **Lifecycle Integration**: Registering `task` as a core orchestration command.
+
+
 
 ## [v7.11] - 2026-05-17 11:30
 ### 🎯 Detailed Requirement Breakdown

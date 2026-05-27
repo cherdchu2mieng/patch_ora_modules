@@ -1,0 +1,49 @@
+// @pulse-patch: command_cases@v8.2.2
+  case "board":
+  case "b":
+    await board(args[0]);
+    break;
+  case "keyword":
+  case "kw": {
+    const { keyword } = require("./commands/index");
+    await keyword(args);
+    break;
+  }
+  case "task":
+  case "tk": {
+    const { task } = require("./commands/index");
+    if (!args[0]) {
+       console.error("Usage: pulse task <master_item_index>");
+       process.exit(1);
+    }
+    await task(parseInt(args[0]));
+    break;
+  }
+  case "start": {
+    const { start } = require("./commands/index");
+    if (!args[0]) {
+       console.error("Usage: pulse start <master_item_index>");
+       process.exit(1);
+    }
+    await start(parseInt(args[0]));
+    break;
+  }
+  case "go": {
+    const { go } = require("./commands/index");
+    if (!args[0]) {
+       console.error("Usage: pulse go <master_item_index/id>");
+       process.exit(1);
+    }
+    await go(parseInt(args[0]));
+    break;
+  }
+  case "done":
+  case "close": {
+    const { close } = require("./commands/index");
+    if (!args[0]) {
+       console.error("Usage: pulse close <local_item_index/id>");
+       process.exit(1);
+    }
+    await close(parseInt(args[0]));
+    break;
+  }

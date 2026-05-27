@@ -1,0 +1,4 @@
+oracle: gemi-oracle
+date: 2026-05-18
+mode: default
+source: https://github.com/cherdchu2mieng/patch_ora_modules
