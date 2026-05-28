@@ -38,13 +38,14 @@ chmod +x bin/oracle-patch
 - **Wake All Support**: แทรก logic `maw wake all` เพื่อเปิดการทำงาน Oracle ทั้งหมดในคำสั่งเดียว
 - **Patched Indicator**: เพิ่มเครื่องหมาย `(patched 🌊)` ใน `maw --version`
 
-### 2. `pulse-cli` (Pulse Management) - **v8.2.1 Stable 🛡️** 🌊
+### 2. `pulse-cli` (Pulse Management) - **v8.5 (v2.7 Standard 🛡️🔒)** 🌊
 โมดูลสำหรับปรับปรุงระบบจัดการภารกิจ (Master Board) และการรักษาความปลอดภัยของสิทธิ์
-- **Restoration & Perfection (v8.2.1)**: กู้คืนระบบ Org Mode และการ Routing ผ่าน Gateway ที่สูญหาย พร้อมรองรับเครื่องหมาย `#` ในคำสั่ง `set`
-- **Secure Authority (v7.10)**: ระบบตรวจสอบสิทธิ์ Orchestrator แบบ "Secure by Default" และการระบุตัวตนอัตโนมัติจาก Directory
-- **Robust Patching v1.1**: ใช้มาตรฐานการฉีดโค้ดแบบ Raw String ป้องกันปัญหา Newline Trap และความเสียหายของ Syntax
-- **Comprehensive Master Patch**: รวมความสามารถทั้งหมดตั้งแต่ v7.5 - v8.2.1 ไว้ในสคริปต์เดียว (Idempotent Baseline Reset)
-- **Patched Indicator**: อัปเดตเป็น `(patched 🌊 v8.2.1)` ใน `pulse --version`
+- **Target Clean & Reset (v2.5)**: (NEW) ระบบล้าง Target Repo เป็นสถานะ Clean Baseline อัตโนมัติก่อนเริ่ม Patch เพื่อป้องกัน Regression
+- **Remote Deployment Verification (v2.6)**: (NEW) มาตรฐานการทดสอบผ่าน Remote Clone ก่อนประกาศผลสู่ Fleet
+- **README Management (v2.7)**: (NEW) ระบบควบคุมเอกสาร README ให้ตรงกับสถานะ Sacred Memory เสมอ
+- **Remote-First Traceability (v8.4.2)**: ระบบ Mapping Local Documents ไปยัง Remote URLs ใน Patch Workspace เพื่อการตรวจสอบย้อนกลับที่สมบูรณ์
+- **Secure Authority & Orchestrator Gate**: ระบบควบคุมสิทธิ์การเขียน ITB Board เฉพาะ Orchestrator ที่ได้รับอนุญาต
+- **Robust Patching v2.7**: มาตรฐานการฉีดโค้ดแบบ Ironclad (Raw String + Block Replace) ประกันความเสถียรสูงสุด
 
 *ดูรายละเอียดการปรับปรุงทั้งหมดได้ที่ [modules/pulse-cli/HISTORY.md](modules/pulse-cli/HISTORY.md)*
 
