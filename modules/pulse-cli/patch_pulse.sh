@@ -8,7 +8,7 @@ if [ -z "$1" ]; then
 fi
 
 export PULSE_PATH=$(realpath "$1")
-export PAYLOADS_DIR="$(dirname "$0")/payloads"
+export PAYLOADS_DIR="$(realpath "$(dirname "$0")/payloads")"
 
 # 0. TARGET CLEAN (v2.5 Mandate)
 echo "🧹 Cleaning Target Repo: $PULSE_PATH..."
