@@ -1,6 +1,6 @@
 #!/bin/bash
-# Pulse Patch Orchestrator v8.4.2 (Refinement v2)
-# Sequential, Manifest-Driven, Idempotent
+# Pulse Patch Orchestrator v8.5 (v2.5 Standard)
+# Sequential, Manifest-Driven, Idempotent, Clean-First
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <pulse-cli-path> [--restore]"
@@ -9,9 +9,18 @@ fi
 
 export PULSE_PATH=$(realpath "$1")
 export PAYLOADS_DIR="$(dirname "$0")/payloads"
+
+# 0. TARGET CLEAN (v2.5 Mandate)
+echo "🧹 Cleaning Target Repo: $PULSE_PATH..."
+cd "$PULSE_PATH" || exit 1
+git fetch origin > /dev/null 2>&1
+git reset --hard origin/main > /dev/null 2>&1
+git clean -fd > /dev/null 2>&1
+echo "✅ Target is now Clean Baseline (Upstream)."
+
 echo "🌊 Applying MASTER Patch v8.4.2 (Refinement v2) to $PULSE_PATH..."
 
-# 0. RESTORE LOGIC
+# 0.1 RESTORE LOGIC
 if [[ "$2" == "--restore" ]]; then
   BACKUP_ROOT="$HOME/.config/pulse/backups"
   LATEST_BACKUP=$(ls -td "$BACKUP_ROOT"/patch_* 2>/dev/null | head -1)
