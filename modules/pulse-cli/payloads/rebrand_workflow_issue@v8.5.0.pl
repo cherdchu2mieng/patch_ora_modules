@@ -1,0 +1,1 @@
+          maw hey itinfosv-pulse "Issue closed: ${REPO} ${NUM} — ${TITLE} ${URL} — GitHub Actions" || true

@@ -206,4 +206,12 @@ if command -v bun &> /dev/null; then
   fi
 fi
 
-echo "✅ MASTER Patch v8.4.2 Applied successfully."
+
+# 9. ITINFOSV REBRANDING (v8.5.0)
+apply_payload "package.json" "rebrand_package@v8.5.0" "    \"url\": \"https://github.com/Pulse-Oracle/pulse-cli\"" "rebrand_package@v8.5.0.pl" "replace_line"
+apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_issue@v8.5.0" "          maw hey pulse-oracle \"Issue closed: ${REPO} ${NUM} — ${TITLE} ${URL} — GitHub Actions\" || true" "rebrand_workflow_issue@v8.5.0.pl" "replace_line"
+apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_pr@v8.5.0" "          # maw hey Pulse" "rebrand_workflow_pr@v8.5.0.pl" "replace_block" "          maw hey pulse-oracle \"PR merged: ${REPO} ${PR} — ${TITLE} (by ${AUTHOR}) ${URL} — GitHub Actions\" || true"
+apply_payload "README.md" "rebrand_readme_clone@v8.5.0" "git clone https://github.com/Pulse-Oracle/pulse-cli" "rebrand_readme_clone@v8.5.0.pl" "replace_line"
+apply_payload "README.md" "rebrand_readme_path@v8.5.0" "Pulse-Oracle/pulse-cli/" "rebrand_readme_path@v8.5.0.pl" "replace_line"
+
+echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
