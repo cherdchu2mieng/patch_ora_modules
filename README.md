@@ -46,6 +46,7 @@ chmod +x bin/oracle-patch
 - **Remote-First Traceability (v8.4.2)**: ระบบ Mapping Local Documents ไปยัง Remote URLs ใน Patch Workspace เพื่อการตรวจสอบย้อนกลับที่สมบูรณ์
 - **Secure Authority & Orchestrator Gate**: ระบบควบคุมสิทธิ์การเขียน ITB Board เฉพาะ Orchestrator ที่ได้รับอนุญาต
 - **Robust Patching v2.7**: มาตรฐานการฉีดโค้ดแบบ Ironclad (Raw String + Block Replace) ประกันความเสถียรสูงสุด
+- **itinfosv Rebranding (v8.5.0)**: (NEW) ปรับปรุงการอ้างอิงอัตลักษณ์ทั้งหมดให้เป็น itinfosv (package.json, README, Workflows)
 
 *ดูรายละเอียดการปรับปรุงทั้งหมดได้ที่ [modules/pulse-cli/HISTORY.md](modules/pulse-cli/HISTORY.md)*
 
