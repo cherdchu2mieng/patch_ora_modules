@@ -51,6 +51,8 @@ FILES=(
   "packages/cli/src/commands/blog.ts"
   "packages/cli/src/commands/chb.ts"
   "packages/cli/src/commands/init.ts"
+  "packages/cli/src/commands/set.ts"
+  "packages/cli/src/commands/triage.ts"
   "packages/sdk/src/types.ts"
   "packages/sdk/src/github.ts"
 )
@@ -211,9 +213,7 @@ TARGET_START="  const blogRepo = cfg.blog?.repo || getRepoName();"
 TARGET_END="  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);"
 apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2r6" "$TARGET_START" "blog_target_itb@v8.4.2r6.pl" "replace_block" "$TARGET_END"
 
-
-
-# 9. ITINFOSV REBRANDING (v8.5.0)
+# 7. ITINFOSV REBRANDING (v8.5.0)
 apply_payload "package.json" "rebrand_package@v8.5.0" "    \"url\": \"https://github.com/Pulse-Oracle/pulse-cli\"" "rebrand_package@v8.5.0.pl" "replace_line"
 apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_issue@v8.5.0" "          maw hey pulse-oracle \"Issue closed: ${REPO} ${NUM} — ${TITLE} ${URL} — GitHub Actions\" || true" "rebrand_workflow_issue@v8.5.0.pl" "replace_line"
 apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_pr@v8.5.0" "          # maw hey Pulse" "rebrand_workflow_pr@v8.5.0.pl" "replace_block" "          maw hey pulse-oracle \"PR merged: ${REPO} ${PR} — ${TITLE} (by ${AUTHOR}) ${URL} — GitHub Actions\" || true"
@@ -222,7 +222,7 @@ apply_payload "README.md" "rebrand_readme_path@v8.5.0" "Pulse-Oracle/pulse-cli/"
 
 echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
 
-# 10. V1 SPECIFIC PATCHES (CR-001 to CR-004)
+# 10. V1 SPECIFIC PATCHES (CR-001 to CR-006)
 apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "" "sdk_types_anchor@v8.5.0.pl" "replace_file"
 apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "" "sdk_github_anchor@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/config.ts" "config_auth_gate@v8.5.0" "export function getOrgDir(): string {" "config_auth_gate@v8.5.0.pl" "replace_block" "}"
@@ -231,6 +231,8 @@ apply_payload "packages/cli/src/commands/init.ts" "init_v1_standard@v8.5.0" "" "
 apply_payload "packages/cli/src/commands/board.ts" "cmd_board_v1@v8.5.0" "" "cmd_board_v1@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/commands/triage.ts" "cmd_triage_v1@v8.5.0" "" "cmd_triage_v1@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/commands/keyword.ts" "cmd_keyword_v1@v8.5.0" "" "cmd_keyword_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/add.ts" "cmd_add_v1@v8.5.0" "" "cmd_add_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/set.ts" "cmd_set_v1@v8.5.0" "" "cmd_set_v1@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/commands/index.ts" "index_keyword_v1@v8.5.0" "export { cleanup } from \"./cleanup\";" "index_keyword_v1@v8.5.0.pl"
 
 # 8. SYNTAX GUARD
