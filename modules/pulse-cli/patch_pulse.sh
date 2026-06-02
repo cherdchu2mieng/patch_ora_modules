@@ -238,6 +238,14 @@ echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
 
 
 
+
+# 6. CR-UNIFIED-004: pulse kw sync V1 Identity Sync
+apply_payload "packages/cli/src/commands/keyword.ts" "cmd_keyword_v1@v8.5.0" "" "cmd_keyword_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/index.ts" "index_keyword_v1@v8.5.0" "export { cleanup } from \"./cleanup\";" "index_keyword_v1@v8.5.0.pl"
+apply_payload "packages/cli/src/pulse.ts" "pulse_keyword_import_v1@v8.5.0" "import { board," "pulse_keyword_import_v1@v8.5.0.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "pulse_keyword_syntax_v1@v8.5.0" "  case \"triage\":" "pulse_keyword_syntax_v1@v8.5.0.pl"
+apply_payload "packages/cli/src/pulse.ts" "pulse_keyword_help_v1@v8.5.0" "    triage, tr            Show items missing Priority/Client/Oracle" "pulse_keyword_help_v1@v8.5.0.pl" "replace_line"
+
 # 5. CR-UNIFIED-003: pulse triage V1 Governance
 apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "" "sdk_types_anchor@v8.5.0.pl" "replace_file"
 apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "" "sdk_github_anchor@v8.5.0.pl" "replace_file"
