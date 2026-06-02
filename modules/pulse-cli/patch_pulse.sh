@@ -96,11 +96,15 @@ path = os.path.join(pulse_path, target_file)
 payload_path = os.path.join(payloads_dir, payload_name)
 
 if not os.path.exists(path):
-    print(f"  ⚠️ Skipping: {path} not found")
-    sys.exit(0)
-
-with open(path, "r") as f:
-    content = f.read()
+    if mode == "replace_file":
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        content = ""
+    else:
+        print(f"  ⚠️ Skipping: {path} not found")
+        sys.exit(0)
+else:
+    with open(path, "r") as f:
+        content = f.read()
 
 # Robust Manifest Check
 is_json = target_file.endswith(".json")
