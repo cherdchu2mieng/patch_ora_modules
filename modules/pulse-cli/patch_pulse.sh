@@ -145,6 +145,10 @@ if mode == "replace_block":
     else:
         print(f"  ❌ Error: Block start anchor not found in {target_file}")
         sys.exit(1)
+elif mode == "replace_file":
+    content = payload
+    if not is_json:
+        content = f"// @pulse-patch: {tag}\n" + content
 elif mode == "replace_line":
     if start in content:
         content = content.replace(start, payload)
@@ -232,6 +236,6 @@ echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
 
 # 3. APPLY PAYLOADS (v8.5.0 Unified Protocol V1)
 apply_payload "packages/cli/src/config.ts" "config_v1_interface@v8.5.0" "patchWorkspace?: string;" "config_v1_interface@v8.5.0.pl" "insert"
-apply_payload "packages/cli/src/commands/init.ts" "init_v1_standard@v8.5.0" "    const org = await ask(rl, \"GitHub org or user: \");" "init_v1_standard@v8.5.0.pl" "replace_block" "    saveConfig(config);"
+apply_payload "packages/cli/src/commands/init.ts" "init_v1_standard@v8.5.0" "" "init_v1_standard@v8.5.0.pl" "replace_file"
 
 echo "✅ All patches applied for v8.5.0."
