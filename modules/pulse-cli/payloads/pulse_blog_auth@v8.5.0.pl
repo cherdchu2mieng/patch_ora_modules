@@ -1,2 +1,1 @@
-  case "blog": {
     enforceAuth();
