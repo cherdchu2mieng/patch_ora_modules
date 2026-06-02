@@ -30,7 +30,7 @@ export async function getItems(ctx: PulseContext): Promise<ProjectItem[]> {
   const data = await ghJson(
     "project", "item-list", String(ctx.projectNumber), "--owner", ctx.org, "--limit", "100", "--format", "json"
   );
-  const items: ProjectItem[] = data.items;
+  const items: any[] = data.items;
 
   const projectData = await ghJson(
     "project", "view", String(ctx.projectNumber), "--owner", ctx.org, "--format", "json"
@@ -43,8 +43,8 @@ export async function getItems(ctx: PulseContext): Promise<ProjectItem[]> {
           nodes {
             id
             content {
-              ... on Issue { repository { name } }
-              ... on PullRequest { repository { name } }
+              ... on Issue { url repository { name } }
+              ... on PullRequest { url repository { name } }
             }
             startDate: fieldValueByName(name: "Start Date") {
               ... on ProjectV2ItemFieldDateValue { date }
@@ -65,7 +65,7 @@ export async function getItems(ctx: PulseContext): Promise<ProjectItem[]> {
     }
   }`);
 
-  const extraMap = new Map<string, { start: string; target: string; worktree: string; repo: string; anchor: string; updatedAt: string }>();
+  const extraMap = new Map<string, { start: string; target: string; worktree: string; repo: string; anchor: string; updatedAt: string; url: string }>();
   for (const node of gqlResult.data.node.items.nodes) {
     extraMap.set(node.id, {
       start: node.startDate?.date || "",
@@ -74,6 +74,7 @@ export async function getItems(ctx: PulseContext): Promise<ProjectItem[]> {
       repo: node.content?.repository?.name || "",
       anchor: node.anchor?.text || "",
       updatedAt: node.updatedAt || "",
+      url: node.content?.url || "",
     });
   }
 
@@ -86,6 +87,7 @@ export async function getItems(ctx: PulseContext): Promise<ProjectItem[]> {
       item.repo = extra.repo;
       item.anchor = extra.anchor;
       item.updatedAt = extra.updatedAt;
+      item.url = extra.url;
     }
   }
 

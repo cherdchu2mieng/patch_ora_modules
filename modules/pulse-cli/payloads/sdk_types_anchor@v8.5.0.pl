@@ -16,6 +16,7 @@ export interface ProjectItem {
   repo: string;
   anchor: string;
   updatedAt: string;
+  url: string;
 }
 
 export interface ProjectField {
@@ -33,6 +34,7 @@ export interface AddOpts {
   wt?: string;
   worktree?: boolean;
   priority?: string;
+  client?: string;
 }
 
 export interface EscalateOpts {

@@ -123,10 +123,12 @@ switch (cmd) {
   case "close":
   case "done": {
     if (!args[0]) {
-      console.error("Usage: pulse close <item#>");
+      console.error("Usage: pulse close <ID> [--force]");
       process.exit(1);
     }
-    await close(parseInt(args[0]));
+    await close(args[0], {
+      force: args.includes("--force"),
+    });
     break;
   }
   case "keyword":
