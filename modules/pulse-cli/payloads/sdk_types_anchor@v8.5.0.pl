@@ -1,0 +1,3 @@
+  repo: string;
+  anchor: string;
+}

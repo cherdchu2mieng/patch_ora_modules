@@ -51,6 +51,8 @@ FILES=(
   "packages/cli/src/commands/blog.ts"
   "packages/cli/src/commands/chb.ts"
   "packages/cli/src/commands/init.ts"
+  "packages/sdk/src/types.ts"
+  "packages/sdk/src/github.ts"
 )
 
 for f in "${FILES[@]}"; do
@@ -233,6 +235,14 @@ apply_payload "README.md" "rebrand_readme_clone@v8.5.0" "git clone https://githu
 apply_payload "README.md" "rebrand_readme_path@v8.5.0" "Pulse-Oracle/pulse-cli/" "rebrand_readme_path@v8.5.0.pl" "replace_line"
 
 echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
+
+
+# 4. CR-UNIFIED-002: pulse board V1 Visualization
+apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "  repo: string;" "sdk_types_anchor@v8.5.0.pl" "replace_block" "}"
+apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "            worktree: fieldValueByName(name: "Worktree") {" "sdk_github_anchor@v8.5.0.pl" "replace_block" "            }"
+apply_payload "packages/sdk/src/github.ts" "sdk_github_mapping@v8.5.0" "    extraMap.set(node.id, {" "sdk_github_mapping@v8.5.0.pl" "replace_block" "    });"
+apply_payload "packages/sdk/src/github.ts" "sdk_github_sync@v8.5.0" "    if (extra) {" "sdk_github_sync@v8.5.0.pl" "replace_block" "    }"
+apply_payload "packages/cli/src/commands/board.ts" "cmd_board_v1@v8.5.0" "" "cmd_board_v1@v8.5.0.pl" "replace_file"
 
 # 3. APPLY PAYLOADS (v8.5.0 Unified Protocol V1)
 apply_payload "packages/cli/src/config.ts" "config_v1_interface@v8.5.0" "patchWorkspace?: string;" "config_v1_interface@v8.5.0.pl" "insert"
