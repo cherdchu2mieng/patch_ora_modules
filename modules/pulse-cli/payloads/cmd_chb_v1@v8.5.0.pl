@@ -1,98 +1,137 @@
-import { gh, getItems, setFieldOnItem, setTextField, graphql } from "@pulse-oracle/sdk";
+import { gh, getItems, setFieldOnItem, setTextField, graphql, getProjectId } from "@pulse-oracle/sdk";
 import { getContext, getCurrentOracle, loadConfig } from "../config";
+
+async function getFullRepoName(): Promise<string> {
+  try {
+    const remote = await gh("remote", "get-url", "origin");
+    const match = remote.match(/[:/]([^/]+\/[^/]+?)(?:\.git)?$/);
+    return match ? match[1] : "";
+  } catch { return ""; }
+}
 
 export async function chb(rawId: string | number, opts: { delegated?: boolean; returned?: boolean } = {}) {
   console.log("\n  🌊 Pulse CLI Unified Protocol V1 (v8.5.0)");
-  console.log("  🔄 Handover Standard Mode\n");
+  console.log("  🔄 Handover Standard Mode (Board-Aware Anchoring)\n");
 
   const cfg = loadConfig();
   const ctx = getContext();
-  const currentOracle = getCurrentOracle();
   const items = await getItems(ctx);
 
   const itemIndex = typeof rawId === "string" ? parseInt(rawId.replace("#", "")) : rawId;
   if (isNaN(itemIndex) || itemIndex < 1 || itemIndex > items.length) {
-    console.error(`❌ Error: Item index ${itemIndex} out of range (1-${items.length})`);
+    console.error("❌ Error: Item index " + itemIndex + " out of range (1-" + items.length + ")");
     return;
   }
 
   const item = items[itemIndex - 1];
-  const isITB = ctx.org.toLowerCase() === "itinfosv";
+  
+  const itbFull = cfg.board?.ITB || "itinfosv/pulse-oracle";
+  const aibFull = cfg.board?.AIB || (cfg.org + "/pulse-oracle");
+  
+  const [itbOrgContext, itbRepoName] = itbFull.split("/");
+  const [aibOrgContext, aibRepoName] = aibFull.split("/");
 
-  if (opts.delegated) {
-    // ITB -> AIB
-    if (!isITB) {
-      console.error("❌ Context Error: --Delegated can only be used on IT Master Board (itinfosv).");
+  const isITB = ctx.org.toLowerCase() === itbOrgContext.toLowerCase();
+  const isAIB = ctx.org.toLowerCase() === aibOrgContext.toLowerCase();
+
+  console.log("  Current Context: " + (isITB ? "IT Master Board" : (isAIB ? "AI Board Team" : "Unknown Board")));
+
+  const orchestratorName = cfg.orchestrator?.oracle || "gemi";
+
+  let action: "delegated" | "returned" | undefined;
+  if (opts.delegated) action = "delegated";
+  else if (opts.returned) action = "returned";
+  else if (isITB) action = "delegated";
+  else if (isAIB) action = "returned";
+
+  if (action === "delegated") {
+    if (!isITB && !opts.delegated) {
+      console.error("❌ Context Error: Delegation must be performed from the IT Master Board (" + itbFull + ").");
       return;
     }
 
     if (!item.oracle) {
-      console.error("❌ Authority Error: No Oracle assigned to this task. Use 'pulse set' first.");
+      console.error("❌ Authority Error: No worker Oracle assigned.");
       return;
     }
 
-    const targetOracle = item.oracle.toLowerCase();
-    console.log(`🔄 Delegating task #${itemIndex} to ${item.oracle}'s board...`);
+    console.log("🔄 Delegating task #" + itemIndex + " to " + aibFull + "...");
 
-    // 1. Create Issue in AIB
-    const aibRepo = `${targetOracle}/pulse-oracle`;
-    const issueArgs = [
-      "issue", "create", "--repo", aibRepo, "--title", item.title,
-      "--body", `Delegated from ITB-#${itemIndex}\n\nOriginal: ${item.url || '---'}`,
-    ];
-    const aibIssueUrl = await gh(...issueArgs);
+    let aibIssueUrl: string;
+    try {
+      const issueArgs = [
+        "issue", "create", "--repo", aibFull, "--title", item.title,
+        "--body", "Delegated from IT Master Board (" + itbFull + "#" + itemIndex + ")\n\nOriginal: " + (item.url || "---"),
+      ];
+      aibIssueUrl = await gh(...issueArgs);
+      console.log("  GitHub: ✅ Created issue in " + aibFull);
+    } catch (e: any) {
+      console.error("❌ GitHub Error: " + e.message);
+      return;
+    }
+
     const aibIssueId = aibIssueUrl.trim().split("/").pop();
 
-    // 2. Add to AIB Board (assuming project number is same or discoverable)
-    // For V1 simplicity, we assume the user has configured their own project in peers or we use a convention
-    // In this implementation, we will just establish the link first.
-    
-    // 3. Set Anchors
-    await setTextField(ctx, item.id, "Anchor", `AIB-#${aibIssueId}`);
-    await setFieldOnItem(ctx, item.id, "Status", "In Progress");
+    // --- ITB UPDATE (Source) ---
+    await setFieldOnItem(ctx, item.id, "Status", "Delegated");
+    await setFieldOnItem(ctx, item.id, "Priority", "P1");
+    await setTextField(ctx, item.id, "Anchor", "AIB-#" + aibIssueId);
 
-    console.log(`  Source: ITB-#${itemIndex}`);
-    console.log(`  Target: AIB-#${aibIssueId}`);
-    console.log(`  Action: 🔄 Delegated`);
-    console.log(`\n✅ Handover completed. Task is now linked.`);
+    console.log("  Board (ITB): ✅ Status=Delegated, Priority=P1 (Oracle preserved)");
+    console.log("  Anchor: AIB-#" + aibIssueId);
 
-  } else if (opts.returned) {
-    // AIB -> ITB
-    if (isITB) {
-      console.error("❌ Context Error: --Returned should be used on AI Board Team (User board).");
+    // --- AIB UPDATE (Target) ---
+    const aibCtx = { org: aibOrgContext, projectNumber: cfg.projectNumber };
+    try {
+       const addRes = await gh("project", "item-add", String(aibCtx.projectNumber), "--owner", aibCtx.org, "--url", aibIssueUrl.trim(), "--format", "json");
+       const aibItemId = JSON.parse(addRes).id;
+       
+       await setFieldOnItem(aibCtx, aibItemId, "Status", "New");
+       await setFieldOnItem(aibCtx, aibItemId, "Oracle", orchestratorName);
+       await setFieldOnItem(aibCtx, aibItemId, "Priority", "P1");
+       await setFieldOnItem(aibCtx, aibItemId, "Client", "AI-Team");
+       await setTextField(aibCtx, aibItemId, "Anchor", "ITB-#" + itemIndex);
+       
+       console.log("  Board (AIB): ✅ Bidirectional link established (ITB-#" + itemIndex + " <-> AIB)");
+       console.log("  Board (AIB): ✅ Oracle=" + orchestratorName + ", Priority=P1, Client=AI-Team");
+    } catch (e) {
+       console.log("  ⚠️  Target board update failed (optional).");
+    }
+
+    console.log("\n✅ Task delegated successfully.");
+
+  } else if (action === "returned") {
+    if (!isAIB && !opts.returned) {
+      console.error("❌ Context Error: Return must be performed from the AI Board Team (" + aibFull + ").");
       return;
     }
 
     if (!item.anchor || !item.anchor.startsWith("ITB-#")) {
-      console.error("❌ Anchor Error: No valid ITB anchor found (e.g. ITB-#123). Cannot return.");
+      console.error("❌ Anchor Error: No valid ITB anchor found. Cannot return work to Org board.");
       return;
     }
 
     const itbId = item.anchor.replace("ITB-#", "");
-    console.log(`⬆️  Returning task #${itemIndex} to IT Master Board (ID #${itbId})...`);
+    console.log("⬆️  Returning task #" + itemIndex + " to IT Master Board (ID #" + itbId + ")...");
 
-    // 1. Update AIB Status
+    // 1. Update AIB Board: Status=Returned, Priority=P1 (Oracle remains UNCHANGED)
     await setFieldOnItem(ctx, item.id, "Status", "Returned");
+    await setFieldOnItem(ctx, item.id, "Priority", "P1");
 
-    // 2. Update ITB Status (requires switching context)
-    const itbCtx = { org: "itinfosv", projectNumber: cfg.projectNumber }; // Simplified assumption
+    // 2. Update ITB Board: Status=Closed (Modified as requested)
+    const itbCtx = { org: itbOrgContext, projectNumber: cfg.projectNumber };
     try {
       const itbItems = await getItems(itbCtx);
       const itbItem = itbItems[parseInt(itbId) - 1];
       if (itbItem) {
-        await setFieldOnItem(itbCtx, itbItem.id, "Status", "Done");
-        console.log(`  Board (ITB): ✅ Done`);
+        await setFieldOnItem(itbCtx, itbItem.id, "Status", "Closed");
+        console.log("  Board (ITB): ✅ Closed (ID #" + itbId + " updated)");
       }
     } catch (e) {
-      console.log("  ⚠️  Could not update ITB board automatically. Please notify Orchestrator.");
+      console.log("  ⚠️  ITB Board update failed.");
     }
 
-    console.log(`  Source: AIB-#${itemIndex}`);
-    console.log(`  Target: ITB-#${itbId}`);
-    console.log(`  Action: ⬆️  Returned`);
-    console.log(`\n✅ Return synchronization completed.`);
-
-  } else {
-    console.log("Usage: pulse chb <ID> --Delegated | --Returned");
+    console.log("  Board (AIB): ✅ Status=Returned, Priority=P1 (Oracle preserved)");
+    console.log("\n✅ Work returned and synchronized with IT Master Board.");
   }
 }
