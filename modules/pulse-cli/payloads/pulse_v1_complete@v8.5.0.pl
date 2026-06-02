@@ -9,7 +9,7 @@ import {
   board, timeline, add, set, fieldAdd, clearDate, scan, 
   autoAssign, init, escalate, heartbeat, resume, remove, 
   close, triage, scheduler, sentry, backfillWt, start, 
-  blog, cleanup, keyword 
+  blog, cleanup, keyword, chb 
 } from "./commands/index";
 
 const [cmd, ...args] = process.argv.slice(2);
@@ -182,6 +182,12 @@ switch (cmd) {
     });
     break;
   }
+  case "chb":
+    await chb(args[0], {
+      delegated: args.includes("--Delegated"),
+      returned: args.includes("--Returned"),
+    });
+    break;
   case "cleanup":
   case "gc":
     await cleanup({ dry: args.includes("--dry") });
@@ -214,6 +220,7 @@ switch (cmd) {
     backfill-wt, bwt      Scan disk worktrees + match to board items [--dry]
     start, go <ID>        Activate task (Pull + Set In Progress) [--force]
     blog <file.md>        Publish markdown to Discussion (with provenance)
+    chb <ID> [--Delegated | --Returned] Handover standard (Bidirectional Sync)
     cleanup, gc [--dry]   Remove stale/orphan worktrees
 
   Options for add:

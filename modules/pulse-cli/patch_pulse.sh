@@ -127,24 +127,7 @@ if not os.path.exists(payload_path):
 with open(payload_path, "r") as f:
     payload = f.read().strip()
 
-# Manifest Management
-if not is_json:
-    if "// @pulse-patch:" in content:
-        lines = content.split("\n")
-        for i, line in enumerate(lines):
-            if line.startswith("// @pulse-patch:"):
-                if tag not in line:
-                    lines[i] = line.rstrip() + f" {tag}"
-                break
-        content = "\n".join(lines)
-    else:
-        lines = content.split("\n")
-        if len(lines) > 0 and lines[0].startswith("#!"):
-            content = lines[0] + "\n" + f"// @pulse-patch: {tag}" + "\n" + "\n".join(lines[1:])
-        else:
-            content = f"// @pulse-patch: {tag}\n" + content
-
-# Injection
+# Injection & Manifest Management
 if mode == "replace_block":
     idx_start = content.find(start)
     if idx_start != -1:
@@ -158,20 +141,22 @@ if mode == "replace_block":
         print(f"  ❌ Error: Block start anchor not found in {target_file}")
         sys.exit(1)
 elif mode == "replace_file":
-    content = payload
+    new_content = payload
     if not is_json:
-        # Avoid duplicate shebang if payload already has one
-        if content.startswith("#!"):
-            lines = content.split("\n")
-            content = lines[0] + "\n" + f"// @pulse-patch: {tag}" + "\n" + "\n".join(lines[1:])
+        if new_content.startswith("#!"):
+            lines = new_content.split("\n")
+            clean_lines = [lines[0], f"// @pulse-patch: {tag}"]
+            for l in lines[1:]:
+                if not l.startswith("#!"): clean_lines.append(l)
+            new_content = "\n".join(clean_lines)
         else:
-            content = f"// @pulse-patch: {tag}\n" + content
+            new_content = f"// @pulse-patch: {tag}\n" + new_content
+    content = new_content
 elif mode == "replace_line":
     if start in content:
         content = content.replace(start, payload)
     else:
-        if payload in content:
-            pass
+        if payload in content: pass
         else:
             print(f"  ❌ Error: Line anchor not found in {target_file}")
             sys.exit(1)
@@ -181,6 +166,22 @@ else: # Default: insert before start
     else:
         print(f"  ❌ Error: Anchor not found in {target_file}")
         sys.exit(1)
+
+# Manifest Management for non-replace_file modes
+if mode != "replace_file" and not is_json:
+    if "// @pulse-patch:" in content:
+        lines = content.split("\n")
+        for i, line in enumerate(lines):
+            if line.startswith("// @pulse-patch:"):
+                if tag not in line: lines[i] = line.rstrip() + f" {tag}"
+                break
+        content = "\n".join(lines)
+    else:
+        lines = content.split("\n")
+        if len(lines) > 0 and lines[0].startswith("#!"):
+            content = lines[0] + "\n" + f"// @pulse-patch: {tag}" + "\n" + "\n".join(lines[1:])
+        else:
+            content = f"// @pulse-patch: {tag}\n" + content
 
 with open(path, "w") as f:
     f.write(content)
@@ -193,7 +194,7 @@ PY_EOF
   fi
 }
 
-# 3. BASELINE SEQUENTIAL PATCHING (v8.4.x legacy/foundational)
+# 3. BASELINE SEQUENTIAL PATCHING
 apply_payload "packages/sdk/src/types.ts" "sdk_blog_opts@v8.4.2r6" "export interface BlogOpts {" "sdk_blog_opts@v8.4.2r6.pl" "replace_block" "}"
 
 IMPORT_LINE="import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from \"@pulse-oracle/sdk\";"
@@ -214,7 +215,7 @@ apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_pr@v8.5.0
 apply_payload "README.md" "rebrand_readme_clone@v8.5.0" "git clone https://github.com/Pulse-Oracle/pulse-cli" "rebrand_readme_clone@v8.5.0.pl" "replace_line"
 apply_payload "README.md" "rebrand_readme_path@v8.5.0" "Pulse-Oracle/pulse-cli/" "rebrand_readme_path@v8.5.0.pl" "replace_line"
 
-# 5. V1 UNIFIED PROTOCOL SPECIFIC (CR-001 to CR-008)
+# 5. V1 UNIFIED PROTOCOL SPECIFIC (CR-001 to CR-009)
 apply_payload "packages/cli/src/pulse.ts" "pulse_v1_complete@v8.5.0" "" "pulse_v1_complete@v8.5.0.pl" "replace_file"
 apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "" "sdk_types_anchor@v8.5.0.pl" "replace_file"
 apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "" "sdk_github_anchor@v8.5.0.pl" "replace_file"
@@ -228,8 +229,9 @@ apply_payload "packages/cli/src/commands/add.ts" "cmd_add_v1@v8.5.0" "" "cmd_add
 apply_payload "packages/cli/src/commands/set.ts" "cmd_set_v1@v8.5.0" "" "cmd_set_v1@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/commands/task.ts" "cmd_task_v1@v8.5.0" "" "cmd_task_v1@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/commands/start.ts" "cmd_start_v1@v8.5.0" "" "cmd_start_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/chb.ts" "cmd_chb_v1@v8.5.0" "" "cmd_chb_v1@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/commands/close.ts" "cmd_close_v1@v8.5.0" "" "cmd_close_v1@v8.5.0.pl" "replace_file"
-apply_payload "packages/cli/src/commands/index.ts" "index_v1_complete@v8.5.0" "" "index_start_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/index.ts" "index_v1_complete@v8.5.0" "" "index_v1_complete@v8.5.0.pl" "replace_file"
 
 # 6. REFINEMENT: PROVENANCE URL & CONFIG (CR-006.v2)
 apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2r6" "  blog?: {" "config_patch_ws@v8.4.2r6.pl" "replace_line"
