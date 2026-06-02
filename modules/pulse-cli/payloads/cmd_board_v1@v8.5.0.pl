@@ -1,8 +1,10 @@
 import { fmtBoardDates, filterItems, getItems, padDisplay, sliceDisplay } from "@pulse-oracle/sdk";
-import { getContext } from "../config";
+import { getContext, loadConfig } from "../config";
 
 export async function board(filter?: string) {
-  const allItems = await getItems(getContext());
+  const ctx = getContext();
+  const cfg = loadConfig();
+  const allItems = await getItems(ctx);
   const indexed = allItems.map((item, i) => ({ item, rawIndex: i + 1 }));
 
   let filtered = filter
@@ -16,8 +18,11 @@ export async function board(filter?: string) {
     filtered.filter(({ item }) => !item.priority),
   ];
 
+  const isITB = cfg.org.toLowerCase() === "itinfosv";
+  const boardTitle = isITB ? "IT Master Board" : "AI Board Team";
+
   console.log("\n  🌊 Pulse CLI Unified Protocol V1 (v8.5.0)");
-  const label = filter ? `Board — ${filter}` : "Master Board";
+  const label = filter ? `${boardTitle} — ${filter}` : boardTitle;
   console.log(`  ${label}  (${filtered.length} items)\n`);
 
   function shortRepo(repo: string): string {
