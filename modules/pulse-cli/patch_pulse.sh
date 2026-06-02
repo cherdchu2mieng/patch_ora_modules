@@ -55,6 +55,7 @@ FILES=(
   "packages/cli/src/commands/triage.ts"
   "packages/cli/src/commands/start.ts"
   "packages/cli/src/commands/task.ts"
+  "packages/cli/src/commands/close.ts"
   "packages/cli/src/commands/index.ts"
   "packages/sdk/src/types.ts"
   "packages/sdk/src/github.ts"
@@ -159,6 +160,7 @@ if mode == "replace_block":
 elif mode == "replace_file":
     content = payload
     if not is_json:
+        # Avoid duplicate shebang if payload already has one
         if content.startswith("#!"):
             lines = content.split("\n")
             content = lines[0] + "\n" + f"// @pulse-patch: {tag}" + "\n" + "\n".join(lines[1:])
@@ -191,7 +193,7 @@ PY_EOF
   fi
 }
 
-# 3. BASELINE SEQUENTIAL PATCHING
+# 3. BASELINE SEQUENTIAL PATCHING (v8.4.x legacy/foundational)
 apply_payload "packages/sdk/src/types.ts" "sdk_blog_opts@v8.4.2r6" "export interface BlogOpts {" "sdk_blog_opts@v8.4.2r6.pl" "replace_block" "}"
 
 IMPORT_LINE="import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from \"@pulse-oracle/sdk\";"
@@ -205,27 +207,15 @@ apply_payload "packages/cli/src/commands/add.ts" "add_repo_lock@v8.4.0" "$REPO_B
 
 apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return addedItemId;" "add_field_sync@v8.4.0.pl"
 
-# 4. CONSOLIDATED PULSE.TS (V1)
-apply_payload "packages/cli/src/pulse.ts" "pulse_v1_complete@v8.5.0" "" "pulse_v1_complete@v8.5.0.pl" "replace_file"
-
-# 5. REFINEMENT: PROVENANCE URL & CONFIG (CR-006.v2)
-apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2r6" "  blog?: {" "config_patch_ws@v8.4.2r6.pl" "replace_line"
-
-# 6. UNIFIED TARGET & PROVENANCE (CR-006.v1)
-TARGET_START="  const blogRepo = cfg.blog?.repo || getRepoName();"
-TARGET_END="  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);"
-apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2r6" "$TARGET_START" "blog_target_itb@v8.4.2r6.pl" "replace_block" "$TARGET_END"
-
-# 7. ITINFOSV REBRANDING (v8.5.0)
+# 4. ITINFOSV REBRANDING (v8.5.0)
 apply_payload "package.json" "rebrand_package@v8.5.0" "    \"url\": \"https://github.com/Pulse-Oracle/pulse-cli\"" "rebrand_package@v8.5.0.pl" "replace_line"
 apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_issue@v8.5.0" "          maw hey pulse-oracle \"Issue closed: ${REPO} ${NUM} — ${TITLE} ${URL} — GitHub Actions\" || true" "rebrand_workflow_issue@v8.5.0.pl" "replace_line"
 apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_pr@v8.5.0" "          # maw hey Pulse" "rebrand_workflow_pr@v8.5.0.pl" "replace_block" "          maw hey pulse-oracle \"PR merged: ${REPO} ${PR} — ${TITLE} (by ${AUTHOR}) ${URL} — GitHub Actions\" || true"
 apply_payload "README.md" "rebrand_readme_clone@v8.5.0" "git clone https://github.com/Pulse-Oracle/pulse-cli" "rebrand_readme_clone@v8.5.0.pl" "replace_line"
 apply_payload "README.md" "rebrand_readme_path@v8.5.0" "Pulse-Oracle/pulse-cli/" "rebrand_readme_path@v8.5.0.pl" "replace_line"
 
-echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
-
-# 10. V1 SPECIFIC PATCHES (CR-001 to CR-007)
+# 5. V1 UNIFIED PROTOCOL SPECIFIC (CR-001 to CR-008)
+apply_payload "packages/cli/src/pulse.ts" "pulse_v1_complete@v8.5.0" "" "pulse_v1_complete@v8.5.0.pl" "replace_file"
 apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "" "sdk_types_anchor@v8.5.0.pl" "replace_file"
 apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "" "sdk_github_anchor@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/config.ts" "config_auth_gate@v8.5.0" "export function getOrgDir(): string {" "config_auth_gate@v8.5.0.pl" "replace_block" "}"
@@ -238,9 +228,18 @@ apply_payload "packages/cli/src/commands/add.ts" "cmd_add_v1@v8.5.0" "" "cmd_add
 apply_payload "packages/cli/src/commands/set.ts" "cmd_set_v1@v8.5.0" "" "cmd_set_v1@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/commands/task.ts" "cmd_task_v1@v8.5.0" "" "cmd_task_v1@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/commands/start.ts" "cmd_start_v1@v8.5.0" "" "cmd_start_v1@v8.5.0.pl" "replace_file"
-apply_payload "packages/cli/src/commands/index.ts" "index_start_v1@v8.5.0" "" "index_start_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/close.ts" "cmd_close_v1@v8.5.0" "" "cmd_close_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/index.ts" "index_v1_complete@v8.5.0" "" "index_start_v1@v8.5.0.pl" "replace_file"
 
-# 8. SYNTAX GUARD
+# 6. REFINEMENT: PROVENANCE URL & CONFIG (CR-006.v2)
+apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2r6" "  blog?: {" "config_patch_ws@v8.4.2r6.pl" "replace_line"
+
+# 7. UNIFIED TARGET & PROVENANCE (CR-006.v1)
+TARGET_START="  const blogRepo = cfg.blog?.repo || getRepoName();"
+TARGET_END="  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);"
+apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2r6" "$TARGET_START" "blog_target_itb@v8.4.2r6.pl" "replace_block" "$TARGET_END"
+
+# 8. FINAL SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
 if command -v bun &> /dev/null; then
@@ -253,4 +252,4 @@ if command -v bun &> /dev/null; then
   fi
 fi
 
-echo "✅ All patches applied for v8.5.0."
+echo "✅ All patches applied for v8.5.0 (Unified Protocol V1)."
