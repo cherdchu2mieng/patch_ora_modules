@@ -43,6 +43,7 @@ FILES=(
   "packages/cli/src/commands/add.ts"
   "packages/cli/src/commands/blog.ts"
   "packages/cli/src/commands/chb.ts"
+  "packages/cli/src/commands/init.ts"
 )
 
 for f in "${FILES[@]}"; do
@@ -215,3 +216,9 @@ apply_payload "README.md" "rebrand_readme_clone@v8.5.0" "git clone https://githu
 apply_payload "README.md" "rebrand_readme_path@v8.5.0" "Pulse-Oracle/pulse-cli/" "rebrand_readme_path@v8.5.0.pl" "replace_line"
 
 echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
+
+# 3. APPLY PAYLOADS (v8.5.0 Unified Protocol V1)
+apply_payload "packages/cli/src/config.ts" "config_v1_interface@v8.5.0" "patchWorkspace?: string;" "config_v1_interface@v8.5.0.pl" "insert"
+apply_payload "packages/cli/src/commands/init.ts" "init_v1_standard@v8.5.0" '    const org = await ask(rl, "GitHub org or user: ");' "init_v1_standard@v8.5.0.pl" "replace_block" "    saveConfig(config);"
+
+echo "✅ All patches applied for v8.5.0."
