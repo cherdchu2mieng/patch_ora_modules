@@ -50,7 +50,7 @@ switch (cmd) {
       console.error("Usage: pulse set <item#> <value> [value2...]");
       process.exit(1);
     }
-    await set(parseInt(args[0]), ...args.slice(1));
+    await set(args[0], ...args.slice(1));
     break;
   case "field-add":
   case "fa":
