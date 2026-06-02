@@ -133,7 +133,7 @@ if not is_json:
         content = "\n".join(lines)
     else:
         lines = content.split("\n")
-        if lines[0].startswith("#!"):
+        if len(lines) > 0 and lines[0].startswith("#!"):
             content = lines[0] + "\n" + f"// @pulse-patch: {tag}" + "\n" + "\n".join(lines[1:])
         else:
             content = f"// @pulse-patch: {tag}\n" + content
@@ -154,7 +154,11 @@ if mode == "replace_block":
 elif mode == "replace_file":
     content = payload
     if not is_json:
-        content = f"// @pulse-patch: {tag}\n" + content
+        if content.startswith("#!"):
+            lines = content.split("\n")
+            content = lines[0] + "\n" + f"// @pulse-patch: {tag}" + "\n" + "\n".join(lines[1:])
+        else:
+            content = f"// @pulse-patch: {tag}\n" + content
 elif mode == "replace_line":
     if start in content:
         content = content.replace(start, payload)
@@ -196,26 +200,38 @@ apply_payload "packages/cli/src/commands/add.ts" "add_repo_lock@v8.4.0" "$REPO_B
 
 apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return addedItemId;" "add_field_sync@v8.4.0.pl"
 
-apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" "  case \"add\":" "pulse_add_syntax@v8.4.0.pl" "replace_block" "    break;
-  }"
+# 4. CONSOLIDATED PULSE.TS (V1)
+apply_payload "packages/cli/src/pulse.ts" "pulse_v1_complete@v8.5.0" "" "pulse_v1_complete@v8.5.0.pl" "replace_file"
 
 # 5. REFINEMENT: PROVENANCE URL & CONFIG (CR-006.v2)
 apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2r6" "  blog?: {" "config_patch_ws@v8.4.2r6.pl" "replace_line"
 
-# 6. ORCHESTRATOR BROADCAST AUTHORITY (CR-006.v1 Refinement)
-apply_payload "packages/cli/src/pulse.ts" "pulse_config_imports@v8.4.2r6" "import { board," "pulse_config_imports@v8.4.2r6.pl" "replace_line"
-apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2r6" "const [cmd, ...args] = process.argv.slice(2);" "blog_authority_itb@v8.4.2r6.pl" "replace_line"
-
-# Syntax Clean
-BLOCK_START="case \"blog\": {"
-BLOCK_END="    break;
-  }"
-apply_payload "packages/cli/src/pulse.ts" "blog_syntax_itb@v8.4.2r6" "$BLOCK_START" "blog_syntax_itb@v8.4.2r6.pl" "replace_block" "$BLOCK_END"
-
-# Unified Target & Provenance logic
+# 6. UNIFIED TARGET & PROVENANCE (CR-006.v1)
 TARGET_START="  const blogRepo = cfg.blog?.repo || getRepoName();"
 TARGET_END="  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);"
 apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2r6" "$TARGET_START" "blog_target_itb@v8.4.2r6.pl" "replace_block" "$TARGET_END"
+
+
+
+# 9. ITINFOSV REBRANDING (v8.5.0)
+apply_payload "package.json" "rebrand_package@v8.5.0" "    \"url\": \"https://github.com/Pulse-Oracle/pulse-cli\"" "rebrand_package@v8.5.0.pl" "replace_line"
+apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_issue@v8.5.0" "          maw hey pulse-oracle \"Issue closed: ${REPO} ${NUM} — ${TITLE} ${URL} — GitHub Actions\" || true" "rebrand_workflow_issue@v8.5.0.pl" "replace_line"
+apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_pr@v8.5.0" "          # maw hey Pulse" "rebrand_workflow_pr@v8.5.0.pl" "replace_block" "          maw hey pulse-oracle \"PR merged: ${REPO} ${PR} — ${TITLE} (by ${AUTHOR}) ${URL} — GitHub Actions\" || true"
+apply_payload "README.md" "rebrand_readme_clone@v8.5.0" "git clone https://github.com/Pulse-Oracle/pulse-cli" "rebrand_readme_clone@v8.5.0.pl" "replace_line"
+apply_payload "README.md" "rebrand_readme_path@v8.5.0" "Pulse-Oracle/pulse-cli/" "rebrand_readme_path@v8.5.0.pl" "replace_line"
+
+echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
+
+# 10. V1 SPECIFIC PATCHES (CR-001 to CR-004)
+apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "" "sdk_types_anchor@v8.5.0.pl" "replace_file"
+apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "" "sdk_github_anchor@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/config.ts" "config_auth_gate@v8.5.0" "export function getOrgDir(): string {" "config_auth_gate@v8.5.0.pl" "replace_block" "}"
+apply_payload "packages/cli/src/config.ts" "config_v1_interface@v8.5.0" "patchWorkspace?: string;" "config_v1_interface@v8.5.0.pl" "insert"
+apply_payload "packages/cli/src/commands/init.ts" "init_v1_standard@v8.5.0" "" "init_v1_standard@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/board.ts" "cmd_board_v1@v8.5.0" "" "cmd_board_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/triage.ts" "cmd_triage_v1@v8.5.0" "" "cmd_triage_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/keyword.ts" "cmd_keyword_v1@v8.5.0" "" "cmd_keyword_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/index.ts" "index_keyword_v1@v8.5.0" "export { cleanup } from \"./cleanup\";" "index_keyword_v1@v8.5.0.pl"
 
 # 8. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
@@ -229,43 +245,5 @@ if command -v bun &> /dev/null; then
     exit 1
   fi
 fi
-
-
-# 9. ITINFOSV REBRANDING (v8.5.0)
-apply_payload "package.json" "rebrand_package@v8.5.0" "    \"url\": \"https://github.com/Pulse-Oracle/pulse-cli\"" "rebrand_package@v8.5.0.pl" "replace_line"
-apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_issue@v8.5.0" "          maw hey pulse-oracle \"Issue closed: \${REPO} \${NUM} — \${TITLE} \${URL} — GitHub Actions\" || true" "rebrand_workflow_issue@v8.5.0.pl" "replace_line"
-apply_payload ".github/workflows/inbox-auto-add.yml" "rebrand_workflow_pr@v8.5.0" "          # maw hey Pulse" "rebrand_workflow_pr@v8.5.0.pl" "replace_block" "          maw hey pulse-oracle \"PR merged: \${REPO} \${PR} — \${TITLE} (by \${AUTHOR}) \${URL} — GitHub Actions\" || true"
-apply_payload "README.md" "rebrand_readme_clone@v8.5.0" "git clone https://github.com/Pulse-Oracle/pulse-cli" "rebrand_readme_clone@v8.5.0.pl" "replace_line"
-apply_payload "README.md" "rebrand_readme_path@v8.5.0" "Pulse-Oracle/pulse-cli/" "rebrand_readme_path@v8.5.0.pl" "replace_line"
-
-echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
-
-
-
-
-# 6. CR-UNIFIED-004: pulse kw sync V1 Identity Sync
-apply_payload "packages/cli/src/commands/keyword.ts" "cmd_keyword_v1@v8.5.0" "" "cmd_keyword_v1@v8.5.0.pl" "replace_file"
-apply_payload "packages/cli/src/commands/index.ts" "index_keyword_v1@v8.5.0" "export { cleanup } from \"./cleanup\";" "index_keyword_v1@v8.5.0.pl"
-apply_payload "packages/cli/src/pulse.ts" "pulse_keyword_import_v1@v8.5.0" "import { board," "pulse_keyword_import_v1@v8.5.0.pl" "replace_line"
-apply_payload "packages/cli/src/pulse.ts" "pulse_keyword_syntax_v1@v8.5.0" "  case \"triage\":" "pulse_keyword_syntax_v1@v8.5.0.pl"
-apply_payload "packages/cli/src/pulse.ts" "pulse_keyword_help_v1@v8.5.0" "    triage, tr            Show items missing Priority/Client/Oracle" "pulse_keyword_help_v1@v8.5.0.pl" "replace_line"
-
-# 5. CR-UNIFIED-003: pulse triage V1 Governance
-apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "" "sdk_types_anchor@v8.5.0.pl" "replace_file"
-apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "" "sdk_github_anchor@v8.5.0.pl" "replace_file"
-apply_payload "packages/cli/src/config.ts" "config_auth_gate@v8.5.0" "export function getOrgDir(): string {" "config_auth_gate@v8.5.0.pl" "replace_block" "}"
-apply_payload "packages/cli/src/pulse.ts" "pulse_auth_cleanup@v8.5.0" "import { getContext, loadConfig } from \"./config\";" "pulse_auth_cleanup@v8.5.0.pl" "replace_block" "const [cmd, ...args] = process.argv.slice(2);"
-apply_payload "packages/cli/src/pulse.ts" "pulse_blog_auth@v8.5.0" "    enforceOrchestrator();" "pulse_blog_auth@v8.5.0.pl" "replace_line"
-apply_payload "packages/cli/src/commands/triage.ts" "cmd_triage_v1@v8.5.0" "" "cmd_triage_v1@v8.5.0.pl" "replace_file"
-# 4. CR-UNIFIED-002: pulse board V1 Visualization
-apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "" "sdk_types_anchor@v8.5.0.pl" "replace_file"
-apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "            worktree: fieldValueByName(name: \"Worktree\") {" "sdk_github_anchor@v8.5.0.pl"
-apply_payload "packages/sdk/src/github.ts" "sdk_github_mapping@v8.5.0" "    extraMap.set(node.id, {" "sdk_github_mapping@v8.5.0.pl" "replace_block" "    });"
-apply_payload "packages/sdk/src/github.ts" "sdk_github_sync@v8.5.0" "    if (extra) {" "sdk_github_sync@v8.5.0.pl" "replace_block" "    }"
-apply_payload "packages/cli/src/commands/board.ts" "cmd_board_v1@v8.5.0" "" "cmd_board_v1@v8.5.0.pl" "replace_file"
-
-# 3. APPLY PAYLOADS (v8.5.0 Unified Protocol V1)
-apply_payload "packages/cli/src/config.ts" "config_v1_interface@v8.5.0" "patchWorkspace?: string;" "config_v1_interface@v8.5.0.pl" "insert"
-apply_payload "packages/cli/src/commands/init.ts" "init_v1_standard@v8.5.0" "" "init_v1_standard@v8.5.0.pl" "replace_file"
 
 echo "✅ All patches applied for v8.5.0."
