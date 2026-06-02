@@ -133,6 +133,9 @@ switch (cmd) {
   case "kw":
     await keyword(args);
     break;
+  case "task":
+    await task(parseInt(args[0]));
+    break;
   case "triage":
   case "tr":
     await triage();
@@ -168,15 +171,12 @@ switch (cmd) {
   }
   case "start":
   case "go": {
-    const title = args[0];
-    if (!title) {
-      console.error("Usage: pulse start <title> [--body <body>] [--type <task|bug|feature>]");
+    if (!args[0]) {
+      console.error("Usage: pulse start <ID> [--force]");
       process.exit(1);
     }
-    await start(title, {
-      body: parseFlag("--body"),
-      type: parseFlag("--type"),
-      oracle: parseFlag("--oracle"),
+    await start(args[0], {
+      force: args.includes("--force"),
     });
     break;
   }
@@ -210,7 +210,7 @@ switch (cmd) {
     scheduler, sched      Daily standup/wrapup/idle detection [--post]
     sentry, monitor       Activity monitor — quick or deep [--post]
     backfill-wt, bwt      Scan disk worktrees + match to board items [--dry]
-    start, go <title>     Create issue + set In Progress
+    start, go <ID>        Activate task (Pull + Set In Progress) [--force]
     blog <file.md>        Publish markdown to Discussion (with provenance)
     cleanup, gc [--dry]   Remove stale/orphan worktrees
 
