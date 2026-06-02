@@ -2,34 +2,36 @@
 
 โมดูลสำหรับปรับปรุงและเพิ่มความเสถียรให้กับ `pulse-cli` (GitHub Projects Master Board CLI) โดยใช้มาตรฐาน **Ironclad Architecture v3.0**
 
-## 🏁 รุ่นปัจจุบัน: v8.2.1 Stable (🛡️ Tested from human = Sacred)
+## 🏁 รุ่นปัจจุบัน: v8.5.0 (🛡️ Unified Protocol V1)
 
-เวอร์ชันนี้มุ่งเน้นที่ความเสถียรสูงสุดและการป้องกันการถดถอยของฟีเจอร์ (Regression Prevention) ผ่านการบังคับใช้กฎเหล็ก **Stability Protocol**
+เวอร์ชันนี้คือการอัปเกรดครั้งใหญ่ (Major Upgrade) เพื่อสถาปนามาตรฐาน **Unified Protocol V1** และการปรับเปลี่ยนอัตลักษณ์องค์กรเป็น **`itinfosv`** อย่างสมบูรณ์
 
-### ✨ ฟีเจอร์หลัก (Key Features)
+### ✨ ฟีเจอร์หลักใน V1 (v8.5.0)
 
-#### 1. Advanced Interactive Init
-ระบบเริ่มต้นโครงการ (`pulse init`) ที่มีความละเอียดและยืดหยุ่นสูง:
-- **Scope Selection**: เลือกได้ทั้งระดับ `[U]ser` (งานส่วนตัว) และ `[O]rg` (งานทีม)
-- **One-by-one Discovery**: ในโหมด User ระบบจะถามยืนยันการเพิ่ม Repo ทีละตัว พร้อมให้เปลี่ยนชื่อ (Rename) ได้ทันที
-- **Auto-Discovery**: ในโหมด Org ระบบจะแอด Repo ทั้งหมดที่เกี่ยวข้องโดยอัตโนมัติเพื่อความรวดเร็ว
-- **Clean Org Config**: แยกข้อมูล Gateway และ Orchestrator ออกจากไฟล์ Org เพื่อรักษาความกลาง (Neutrality)
+#### 1. Native Rebranding (`itinfosv`)
+- ปรับจูนทุกคำสั่งและ Metadata ให้สอดคล้องกับอัตลักษณ์ **itinfosv**
+- ระบบเริ่มต้นโครงการ (`pulse init`) มีค่าเริ่มต้นเป็น `itinfosv` พร้อมคำแนะนำภาษาไทย (Bilingual)
 
-#### 2. Dynamic Gateway Cross-Sync
-- เมื่อ Initialize ในระดับ Org ระบบจะถามหา **Sync Target User**
-- ข้อมูล Gateway จะถูกส่งไปอัปเดตที่ไฟล์คอนฟิกของ User โดยอัตโนมัติ ทำให้ Oracle ทุกตัวใน Fleet รู้จักช่องทางการสื่อสารเดียวกัน
+#### 2. Ironclad Governance (Authority Gates)
+- บังคับใช้ระบบตรวจสอบสิทธิ์ **`enforceAuth()`** ในคำสั่งสำคัญ (`set`, `triage`, `blog`)
+- เฉพาะ **Orchestrator** เท่านั้นที่สามารถแก้ไข Metadata ระดับโครงสร้างบอร์ดได้ เพื่อความปลอดภัยสูงสุด
 
-#### 3. Robust Keyword Sync (`kw sync`)
-- คำสั่ง `pulse keyword sync` (หรือ `kw`) จะดึงค่าจากไฟล์ `CLAUDE.md` ของ Oracle นั้นๆ
-- ใช้ระบบ **Deep Cleaning Regex** เพื่อลบ Formatting ส่วนเกินและดึงเฉพาะคำสำคัญที่บริสุทธิ์
-- จัดเก็บข้อมูลในรูปแบบ Array มาตรฐาน (`routing.keyword`) ตามต้นฉบับของ Pulse-Oracle
+#### 3. Board-Aware Context & Smart Handover
+- คำสั่ง **`pulse chb`** (Change Board) ฉลาดขึ้นด้วยการตรวจจับบริบทอัตโนมัติ (ITB vs AIB)
+- ระบบ **Bidirectional Anchoring**: สร้างความเชื่อมโยงถาวรระหว่างบอร์ดบริหารและบอร์ดปฏิบัติการผ่านฟิลด์ `Anchor`
 
-### 🛡️ Stability Protocol (กฎเหล็กการพัฒนา)
-ทุกการเปลี่ยนแปลงในโมดูลนี้ต้องยึดถือหลักการ:
-1. **Tested from human = Sacred**: สิ่งที่มนุษย์ทดสอบผ่านแล้ว ห้ามแก้ไขโดยไม่ได้รับอนุญาต
-2. **Consult First**: ต้องปรึกษาและนำเสนอแผน (Proposal) ก่อนการปรับปรุงฟีเจอร์เดิม
-3. **Surgical Precision**: การ Patch ต้องแม่นยำและส่งผลกระทบต่อส่วนอื่นน้อยที่สุด
+#### 4. Symmetrical Lifecycle Synchronization
+- **Symmetrical Closure**: `pulse close` จะปิดงานทั้งบนบอร์ดกลางและ GitHub Issue พร้อมกัน 100%
+- **Lifecycle Activation**: `pulse start` อัปเดตสถานะและลงวันที่เริ่มงานบนบอร์ดบริหารทันที
+
+#### 5. Precision Visualization (10-Column Board)
+- แสดงผล Master Board แบบละเอียด 10 คอลัมน์ พร้อมระบบสี ANSI บอกระดับความสำคัญ (Priority) และสถานะงาน
+
+### 🛡️ Ironclad Standards
+1. **Tested from human = Sacred**: โค้ดที่ผ่านการทดสอบจะถูกล็อกสถานะ และมีการทำ **Final Snapshot** เก็บไว้ใน `archive/`
+2. **Surgical Precision**: ใช้ระบบ Payload-Based Patching เพื่อความแม่นยำสูงสุด
+3. **Traceability First**: ทุกการประกาศข่าวผ่าน `blog` จะมี Link เชื่อมโยงกลับมาที่ Patch Workspace นี้เสมอ
 
 ---
 **Oracle Signature**: Gemi 🌊 (Deep Blue Horizon)
-*"Stable foundations enable dynamic flight."*
+*"Stable foundations enable dynamic flight. The fleet is unified."*
