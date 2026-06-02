@@ -237,6 +237,17 @@ apply_payload "README.md" "rebrand_readme_path@v8.5.0" "Pulse-Oracle/pulse-cli/"
 echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
 
 
+
+# 5. CR-UNIFIED-003: pulse triage V1 Governance
+apply_payload "packages/sdk/src/types.ts" "sdk_types_updated@v8.5.0" "  anchor: string;" "sdk_types_updated@v8.5.0.pl" "replace_block" "}"
+apply_payload "packages/sdk/src/github.ts" "sdk_github_updated@v8.5.0" "            anchor: fieldValueByName(name: \"Anchor\") {" "sdk_github_updated@v8.5.0.pl" "replace_block" "            updatedAt\n"
+apply_payload "packages/sdk/src/github.ts" "sdk_github_mapping_updated@v8.5.0" "      repo: node.content?.repository?.name || \"\"," "sdk_github_mapping_updated@v8.5.0.pl" "replace_block" "    });"
+apply_payload "packages/sdk/src/github.ts" "sdk_github_sync_updated@v8.5.0" "      item.repo = extra.repo;" "sdk_github_sync_updated@v8.5.0.pl" "replace_block" "    }"
+apply_payload "packages/cli/src/config.ts" "config_auth_gate@v8.5.0" "export function getOrgDir(): string {" "config_auth_gate@v8.5.0.pl" "replace_block" "}"
+apply_payload "packages/cli/src/pulse.ts" "pulse_auth_cleanup@v8.5.0" "import { getContext, loadConfig } from \"./config\";" "pulse_auth_cleanup@v8.5.0.pl" "replace_block" "const [cmd, ...args] = process.argv.slice(2);"
+apply_payload "packages/cli/src/pulse.ts" "pulse_blog_auth@v8.5.0" "  case \"blog\": {" "pulse_blog_auth@v8.5.0.pl" "replace_block" "    enforceAuth();"
+apply_payload "packages/cli/src/commands/triage.ts" "cmd_triage_v1@v8.5.0" "" "cmd_triage_v1@v8.5.0.pl" "replace_file"
+
 # 4. CR-UNIFIED-002: pulse board V1 Visualization
 apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "  repo: string;" "sdk_types_anchor@v8.5.0.pl" "replace_block" "}"
 apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "            worktree: fieldValueByName(name: \"Worktree\") {" "sdk_github_anchor@v8.5.0.pl" "replace_block" "            }"

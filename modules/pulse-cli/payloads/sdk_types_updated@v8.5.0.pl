@@ -1,0 +1,3 @@
+  anchor: string;
+  updatedAt: string;
+}
