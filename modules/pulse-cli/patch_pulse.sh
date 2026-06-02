@@ -239,7 +239,7 @@ echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
 
 # 4. CR-UNIFIED-002: pulse board V1 Visualization
 apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "  repo: string;" "sdk_types_anchor@v8.5.0.pl" "replace_block" "}"
-apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "            worktree: fieldValueByName(name: "Worktree") {" "sdk_github_anchor@v8.5.0.pl" "replace_block" "            }"
+apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "            worktree: fieldValueByName(name: \"Worktree\") {" "sdk_github_anchor@v8.5.0.pl" "replace_block" "            }"
 apply_payload "packages/sdk/src/github.ts" "sdk_github_mapping@v8.5.0" "    extraMap.set(node.id, {" "sdk_github_mapping@v8.5.0.pl" "replace_block" "    });"
 apply_payload "packages/sdk/src/github.ts" "sdk_github_sync@v8.5.0" "    if (extra) {" "sdk_github_sync@v8.5.0.pl" "replace_block" "    }"
 apply_payload "packages/cli/src/commands/board.ts" "cmd_board_v1@v8.5.0" "" "cmd_board_v1@v8.5.0.pl" "replace_file"
