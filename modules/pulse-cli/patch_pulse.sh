@@ -16,9 +16,16 @@ cd "$PULSE_PATH" || exit 1
 git fetch origin > /dev/null 2>&1
 git reset --hard origin/main > /dev/null 2>&1
 git clean -fd > /dev/null 2>&1
-echo "✅ Target is now Clean Baseline (Upstream)."
 
-echo "🌊 Applying MASTER Patch v8.4.2 (Refinement v2) to $PULSE_PATH..."
+# 0.2 EMERGENCY BASELINE REPAIR (package.json corruption)
+if grep -q "// @pulse-patch:" package.json; then
+  echo "🩹 Repairing corrupted package.json baseline..."
+  sed -i "/\/\/ @pulse-patch:/d" package.json
+fi
+
+echo "✅ Target is now Clean Baseline (Upstream + Local Fix)."
+
+echo "🌊 Applying MASTER Patch v8.5.0 (Unified Protocol V1) to $PULSE_PATH..."
 
 # 0.1 RESTORE LOGIC
 if [[ "$2" == "--restore" ]]; then
@@ -94,10 +101,12 @@ with open(path, "r") as f:
     content = f.read()
 
 # Robust Manifest Check
-manifest_match = re.search(r'// @pulse-patch:.*', content)
-if manifest_match and tag in manifest_match.group(0).split():
-    print(f"  ✅ {tag} already present.")
-    sys.exit(0)
+is_json = target_file.endswith(".json")
+if not is_json:
+    manifest_match = re.search(r"// @pulse-patch:.*", content)
+    if manifest_match and tag in manifest_match.group(0).split():
+        print(f"  ✅ {tag} already present.")
+        sys.exit(0)
 
 if not os.path.exists(payload_path):
     print(f"  ❌ Error: Payload file not found: {payload_path}")
@@ -107,20 +116,21 @@ with open(payload_path, "r") as f:
     payload = f.read().strip()
 
 # Manifest Management
-if "// @pulse-patch:" in content:
-    lines = content.split("\n")
-    for i, line in enumerate(lines):
-        if line.startswith("// @pulse-patch:"):
-            if tag not in line:
-                lines[i] = line.rstrip() + f" {tag}"
-            break
-    content = "\n".join(lines)
-else:
-    lines = content.split("\n")
-    if lines[0].startswith("#!"):
-        content = lines[0] + "\n" + f"// @pulse-patch: {tag}" + "\n" + "\n".join(lines[1:])
+if not is_json:
+    if "// @pulse-patch:" in content:
+        lines = content.split("\n")
+        for i, line in enumerate(lines):
+            if line.startswith("// @pulse-patch:"):
+                if tag not in line:
+                    lines[i] = line.rstrip() + f" {tag}"
+                break
+        content = "\n".join(lines)
     else:
-        content = f"// @pulse-patch: {tag}\n" + content
+        lines = content.split("\n")
+        if lines[0].startswith("#!"):
+            content = lines[0] + "\n" + f"// @pulse-patch: {tag}" + "\n" + "\n".join(lines[1:])
+        else:
+            content = f"// @pulse-patch: {tag}\n" + content
 
 # Injection
 if mode == "replace_block":
@@ -139,8 +149,11 @@ elif mode == "replace_line":
     if start in content:
         content = content.replace(start, payload)
     else:
-        print(f"  ❌ Error: Line anchor not found in {target_file}")
-        sys.exit(1)
+        if payload in content:
+            pass
+        else:
+            print(f"  ❌ Error: Line anchor not found in {target_file}")
+            sys.exit(1)
 else: # Default: insert before start
     if start in content:
         content = content.replace(start, payload + "\n" + start)
@@ -162,36 +175,36 @@ PY_EOF
 # 3. BASELINE SEQUENTIAL PATCHING
 apply_payload "packages/sdk/src/types.ts" "sdk_blog_opts@v8.4.2r6" "export interface BlogOpts {" "sdk_blog_opts@v8.4.2r6.pl" "replace_block" "}"
 
-IMPORT_LINE='import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from "@pulse-oracle/sdk";'
+IMPORT_LINE="import { gh, getIssueTypes, setIssueType, setTextField, ensureLabel } from \"@pulse-oracle/sdk\";"
 apply_payload "packages/cli/src/commands/add.ts" "add_imports@v8.4.0" "$IMPORT_LINE" "add_imports@v8.4.0.pl" "replace_line"
 apply_payload "packages/cli/src/commands/add.ts" "add_config_imports@v8.4.0" "import { getContext, getOracleRepos } from \"../config\";" "add_config_imports@v8.4.0.pl" "replace_line"
 apply_payload "packages/cli/src/commands/add.ts" "add_config_logic@v8.4.0" "const ctx = getContext();" "add_config_logic@v8.4.0.pl"
 
-REPO_BLOCK_START='  let targetRepo = opts.repo;'
-REPO_BLOCK_END='  if (!targetRepo) targetRepo = `${ctx.org}/pulse-oracle`;'
+REPO_BLOCK_START="  let targetRepo = opts.repo;"
+REPO_BLOCK_END="  if (!targetRepo) targetRepo = \`\${ctx.org}/pulse-oracle\`;"
 apply_payload "packages/cli/src/commands/add.ts" "add_repo_lock@v8.4.0" "$REPO_BLOCK_START" "add_repo_lock@v8.4.0.pl" "replace_block" "$REPO_BLOCK_END"
 
 apply_payload "packages/cli/src/commands/add.ts" "add_field_sync@v8.4.0" "return addedItemId;" "add_field_sync@v8.4.0.pl"
 
-apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" '  case "add":' "pulse_add_syntax@v8.4.0.pl" "replace_block" '    break;
-  }'
+apply_payload "packages/cli/src/pulse.ts" "pulse_add_syntax@v8.4.0" "  case \"add\":" "pulse_add_syntax@v8.4.0.pl" "replace_block" "    break;
+  }"
 
 # 5. REFINEMENT: PROVENANCE URL & CONFIG (CR-006.v2)
 apply_payload "packages/cli/src/config.ts" "config_patch_ws@v8.4.2r6" "  blog?: {" "config_patch_ws@v8.4.2r6.pl" "replace_line"
 
 # 6. ORCHESTRATOR BROADCAST AUTHORITY (CR-006.v1 Refinement)
 apply_payload "packages/cli/src/pulse.ts" "pulse_config_imports@v8.4.2r6" "import { board," "pulse_config_imports@v8.4.2r6.pl" "replace_line"
-apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2r6" 'const [cmd, ...args] = process.argv.slice(2);' "blog_authority_itb@v8.4.2r6.pl" "replace_line"
+apply_payload "packages/cli/src/pulse.ts" "blog_authority_itb@v8.4.2r6" "const [cmd, ...args] = process.argv.slice(2);" "blog_authority_itb@v8.4.2r6.pl" "replace_line"
 
 # Syntax Clean
-BLOCK_START='case "blog": {'
-BLOCK_END='    break;
-  }'
+BLOCK_START="case \"blog\": {"
+BLOCK_END="    break;
+  }"
 apply_payload "packages/cli/src/pulse.ts" "blog_syntax_itb@v8.4.2r6" "$BLOCK_START" "blog_syntax_itb@v8.4.2r6.pl" "replace_block" "$BLOCK_END"
 
 # Unified Target & Provenance logic
-TARGET_START='  const blogRepo = cfg.blog?.repo || getRepoName();'
-TARGET_END='  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);'
+TARGET_START="  const blogRepo = cfg.blog?.repo || getRepoName();"
+TARGET_END="  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);"
 apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2r6" "$TARGET_START" "blog_target_itb@v8.4.2r6.pl" "replace_block" "$TARGET_END"
 
 # 8. SYNTAX GUARD
@@ -219,6 +232,6 @@ echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
 
 # 3. APPLY PAYLOADS (v8.5.0 Unified Protocol V1)
 apply_payload "packages/cli/src/config.ts" "config_v1_interface@v8.5.0" "patchWorkspace?: string;" "config_v1_interface@v8.5.0.pl" "insert"
-apply_payload "packages/cli/src/commands/init.ts" "init_v1_standard@v8.5.0" '    const org = await ask(rl, "GitHub org or user: ");' "init_v1_standard@v8.5.0.pl" "replace_block" "    saveConfig(config);"
+apply_payload "packages/cli/src/commands/init.ts" "init_v1_standard@v8.5.0" "    const org = await ask(rl, \"GitHub org or user: \");" "init_v1_standard@v8.5.0.pl" "replace_block" "    saveConfig(config);"
 
 echo "✅ All patches applied for v8.5.0."
