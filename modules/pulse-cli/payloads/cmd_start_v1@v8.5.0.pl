@@ -1,6 +1,5 @@
 import { getItems, setFieldOnItem, graphql, getProjectId } from "@pulse-oracle/sdk";
 import { getContext, getCurrentOracle } from "../config";
-import { task } from "./task";
 
 export async function start(rawId: string | number, opts: { force?: boolean } = {}) {
   console.log("\n  🌊 Pulse CLI Unified Protocol V1 (v8.5.0)");
@@ -23,7 +22,7 @@ export async function start(rawId: string | number, opts: { force?: boolean } = 
   // 1. Identity Gate
   if (!opts.force) {
     if (!currentOracle || item.oracle?.toLowerCase() !== currentOracle.toLowerCase()) {
-      console.error(`❌ Authority Error: You are '${currentOracle || 'unknown'}', but this task is assigned to '${item.oracle || 'none'}'.`);
+      console.error(`❌ Authority Error: You are \"${currentOracle || "unknown"}\", but this task is assigned to \"${item.oracle || "none"}\".`);
       console.log("💡 Use --force if you need to start this task anyway.");
       return;
     }
@@ -32,14 +31,7 @@ export async function start(rawId: string | number, opts: { force?: boolean } = 
     console.log("⚠️  Force Mode: Skipping identity verification.");
   }
 
-  // 2. Pull Task (Create Local Issue & Link)
-  const localId = await task(itemIndex);
-  if (!localId) {
-    console.error("❌ Error: Failed to pull task to local workspace.");
-    return;
-  }
-
-  // 3. Surgical Mutation (Status & Start Date)
+  // 2. Surgical Mutation (Status & Start Date)
   const today = new Date().toISOString().split("T")[0];
   console.log(`🚀 Activating task #${itemIndex} on Master Board...`);
 
@@ -48,8 +40,8 @@ export async function start(rawId: string | number, opts: { force?: boolean } = 
     await setFieldOnItem(ctx, item.id, "Status", "In Progress");
     
     // Set Start Date = Today
-    const fields = (await graphql(`{
-      node(id: "${projectId}") {
+    const fieldsRes = await graphql(`{
+      node(id: \"${projectId}\") {
         ... on ProjectV2 {
           fields(first: 50) {
             nodes {
@@ -58,16 +50,17 @@ export async function start(rawId: string | number, opts: { force?: boolean } = 
           }
         }
       }
-    }`)).data.node.fields.nodes;
+    }`);
+    const fields = fieldsRes.data.node.fields.nodes;
 
     const startDateField = fields.find((f: any) => f.name === "Start Date");
     if (startDateField) {
       await graphql(`mutation {
         updateProjectV2ItemFieldValue(input: {
-          projectId: "${projectId}",
-          itemId: "${item.id}",
-          fieldId: "${startDateField.id}",
-          value: { date: "${today}" }
+          projectId: \"${projectId}\",
+          itemId: \"${item.id}\",
+          fieldId: \"${startDateField.id}\",
+          value: { date: \"${today}\" }
         }) { projectV2Item { id } }
       }`);
     }
@@ -75,7 +68,7 @@ export async function start(rawId: string | number, opts: { force?: boolean } = 
     console.log(`\n  Task ID: #${itemIndex}`);
     console.log(`  Status: ⚡ In Progress`);
     console.log(`  Start Date: ${today}`);
-    console.log(`\n✅ Task is now active and linked to your workspace.`);
+    console.log(`\n✅ Task is now active on the Master Board.`);
 
   } catch (e: any) {
     console.error(`❌ Error updating board: ${e.message}`);

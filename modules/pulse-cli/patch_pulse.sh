@@ -53,6 +53,9 @@ FILES=(
   "packages/cli/src/commands/init.ts"
   "packages/cli/src/commands/set.ts"
   "packages/cli/src/commands/triage.ts"
+  "packages/cli/src/commands/start.ts"
+  "packages/cli/src/commands/task.ts"
+  "packages/cli/src/commands/index.ts"
   "packages/sdk/src/types.ts"
   "packages/sdk/src/github.ts"
 )
@@ -222,7 +225,7 @@ apply_payload "README.md" "rebrand_readme_path@v8.5.0" "Pulse-Oracle/pulse-cli/"
 
 echo "✅ MASTER Patch v8.5.0 (Rebrand) Applied successfully."
 
-# 10. V1 SPECIFIC PATCHES (CR-001 to CR-006)
+# 10. V1 SPECIFIC PATCHES (CR-001 to CR-007)
 apply_payload "packages/sdk/src/types.ts" "sdk_types_anchor@v8.5.0" "" "sdk_types_anchor@v8.5.0.pl" "replace_file"
 apply_payload "packages/sdk/src/github.ts" "sdk_github_anchor@v8.5.0" "" "sdk_github_anchor@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/config.ts" "config_auth_gate@v8.5.0" "export function getOrgDir(): string {" "config_auth_gate@v8.5.0.pl" "replace_block" "}"
@@ -233,7 +236,9 @@ apply_payload "packages/cli/src/commands/triage.ts" "cmd_triage_v1@v8.5.0" "" "c
 apply_payload "packages/cli/src/commands/keyword.ts" "cmd_keyword_v1@v8.5.0" "" "cmd_keyword_v1@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/commands/add.ts" "cmd_add_v1@v8.5.0" "" "cmd_add_v1@v8.5.0.pl" "replace_file"
 apply_payload "packages/cli/src/commands/set.ts" "cmd_set_v1@v8.5.0" "" "cmd_set_v1@v8.5.0.pl" "replace_file"
-apply_payload "packages/cli/src/commands/index.ts" "index_keyword_v1@v8.5.0" "export { cleanup } from \"./cleanup\";" "index_keyword_v1@v8.5.0.pl"
+apply_payload "packages/cli/src/commands/task.ts" "cmd_task_v1@v8.5.0" "" "cmd_task_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/start.ts" "cmd_start_v1@v8.5.0" "" "cmd_start_v1@v8.5.0.pl" "replace_file"
+apply_payload "packages/cli/src/commands/index.ts" "index_start_v1@v8.5.0" "" "index_start_v1@v8.5.0.pl" "replace_file"
 
 # 8. SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
