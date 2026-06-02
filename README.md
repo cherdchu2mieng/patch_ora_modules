@@ -7,6 +7,14 @@ date: 2026-05-27
 
 Project สำหรับเก็บ Patch, เครื่องมือ (Tools), และการกำหนดค่า (Configurations) สำหรับกองทัพ Oracle (AI-Team Fleet) เพื่อเพิ่มความสามารถและแก้ปัญหาที่ตัวโปรเจกต์ต้นฉบับยังไม่รองรับ
 
+
+## 🌊 Unified Protocol V1 (v8.5.0) Highlights
+- **Native Rebranding**: Full alignment with `itinfosv` organization identity.
+- **Precision Visualization**: New 10-column master board with semantic coloring and Anchor IDs.
+- **Ironclad Governance**: Centralized Authority Gate ensuring only Orchestrators manage critical metadata.
+- **Smart Handover**: Bidirectional anchoring between IT Master Board (ITB) and AI Board Team (AIB).
+- **Self-Healing Infrastructure**: Automatic project repository discovery and creation.
+- **Bilingual Context**: Full support for Thai and English instructions in all CLI commands.
 ## 🛠️ Unified Dispatcher: `oracle-patch`
 
 เราใช้ระบบ Dispatcher กลางเพื่อให้การจัดการ Patch เป็นไปตามมาตรฐานเดียวกัน (Modular Architecture)
