@@ -3,3 +3,5 @@
 - 2026-05-28: Upgraded 'build-patch' skill to v2.7 (Target Clean, Remote Verification, README Management).
 - 2026-05-25: Initialized branch and payloads for CR-001 (add command enhancements).
 - 2026-05-25: Completed CR-001 (add command enhancements). Established 'Checkpoint Commit' protocol (v2.3) in Patch Workspace. Verified locally (Sacred).
+
+- **v8.5.2**: Multi-Project CHB Support (Dynamic Context Resolution).
