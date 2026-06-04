@@ -18,7 +18,3 @@ export interface PulseConfig {
   };
   patchWorkspace?: string;
   blog?: {
-    repo?: string;
-    category?: string;
-  };
-}
