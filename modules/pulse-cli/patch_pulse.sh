@@ -25,7 +25,7 @@ fi
 
 echo "✅ Target is now Clean Baseline (Upstream + Local Fix)."
 
-echo "🌊 Applying MASTER Patch v8.5.0 (Unified Protocol V1) to $PULSE_PATH..."
+echo "🌊 Applying MASTER Patch v8.5.2 (Multi-Project CHB) to $PULSE_PATH..."
 
 # 0.1 RESTORE LOGIC
 if [[ "$2" == "--restore" ]]; then
@@ -241,6 +241,26 @@ TARGET_START="  const blogRepo = cfg.blog?.repo || getRepoName();"
 TARGET_END="  const discussion = await createDiscussion(org, blogRepo, title, fullBody, category);"
 apply_payload "packages/cli/src/commands/blog.ts" "blog_target_itb@v8.4.2r6" "$TARGET_START" "blog_target_itb@v8.4.2r6.pl" "replace_block" "$TARGET_END"
 
+
+
+# 9. MULTI-PROJECT CHB SUPPORT (v8.5.2)
+apply_payload "packages/cli/src/config.ts" "config_multi_project@v8.5.2" "export interface PulseConfig {" "config_multi_project@v8.5.2.pl" "replace_block" "  blog?: {"
+apply_payload "packages/cli/src/config.ts" "config_resolver_logic@v8.5.2" "export function getCurrentOracle(): string | undefined {" "config_resolver_logic@v8.5.2.pl"
+
+CHB_START="  const itbFull = cfg.board?.ITB || \"itinfosv/pulse-oracle\";"
+CHB_END="  const isAIB = ctx.org.toLowerCase() === aibOrgContext.toLowerCase();"
+apply_payload "packages/cli/src/commands/chb.ts" "chb_multi_project@v8.5.2" "$CHB_START" "chb_multi_project@v8.5.2.pl" "replace_block" "$CHB_END"
+
+apply_payload "packages/cli/src/commands/init.ts" "init_questions@v8.5.2" "    const projectNumber = parseInt(numStr.trim());" "init_questions@v8.5.2.pl"
+
+INIT_ASS_START="      config.board = {"
+INIT_ASS_END="      };"
+apply_payload "packages/cli/src/commands/init.ts" "init_board_assign@v8.5.2" "$INIT_ASS_START" "init_board_assign@v8.5.2.pl" "replace_block" "$INIT_ASS_END"
+
+INIT_LIT_START="        board: {"
+INIT_LIT_END="        },"
+apply_payload "packages/cli/src/commands/init.ts" "init_board_literal@v8.5.2" "$INIT_LIT_START" "init_board_literal@v8.5.2.pl" "replace_block" "$INIT_LIT_END"
+
 # 8. FINAL SYNTAX GUARD
 echo "🛡️ Running Syntax Guard..."
 cd "$PULSE_PATH"
@@ -254,4 +274,4 @@ if command -v bun &> /dev/null; then
   fi
 fi
 
-echo "✅ All patches applied for v8.5.0 (Unified Protocol V1)."
+echo "✅ All patches applied for v8.5.2 (Multi-Project CHB)."

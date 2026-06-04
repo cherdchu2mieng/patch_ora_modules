@@ -1,0 +1,18 @@
+{
+  "project": "Pulse CLI",
+  "current_active_version": "v8.5.2",
+  "timestamp": "2026-06-04T17:20:00Z",
+  "history": {
+    "v8.5.2": {
+      "description": "Multi-Project CHB Support",
+      "patch_type": "incremental",
+      "features": {
+        "multi_project_chb": [
+          "config.ts",
+          "chb.ts",
+          "init.ts"
+        ]
+      }
+    }
+  }
+}
