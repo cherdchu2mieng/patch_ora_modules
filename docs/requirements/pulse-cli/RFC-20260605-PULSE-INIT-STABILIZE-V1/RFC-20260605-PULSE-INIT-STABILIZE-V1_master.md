@@ -14,7 +14,7 @@
 - **Stability Impact**: High
 - **Security Level**: Standard
 - **Target Version**: v8.5.3
-- **Status**: Draft (Pending Phase 4 Confirm)
+- **Status**: Closed (Implementation Verified)
 
 ## 2. Scope Consensus (The 3-Layer Logic)
 
@@ -48,3 +48,8 @@
 ## 5. Risk & Mitigation
 - **Risk**: การเปลี่ยนโครงสร้างคอนฟิกอาจกระทบต่อ Oracle รุ่นเก่าที่ยังใช้ค่า String
 - **Mitigation**: เพิ่ม Helper ใน `config.ts` ที่ทำหน้าที่ Normalize ข้อมูลให้รองรับทั้ง 2 รูปแบบ (String/Object) ก่อนส่งให้ฟังก์ชันใช้งาน
+
+## 6. RFC-Level Summary (Post-Closure)
+- **Total Duration**: ~3 hours (including Hotfix iterations)
+- **Closure Status**: All CRs (CR-001, CR-002, CR-003, CR-005) successfully implemented, verified by Human, and locked as Sacred. Code delivered to `itinfosv/pulse-cli` under tag `v8.5.4`.
+- **Note**: This RFC successfully stabilized the init UX and decoupled hardcoded string constraints from board configurations.

@@ -4,7 +4,7 @@
 ## 1. CR Information
 - **Parent RFC**: RFC-20260605-PULSE-INIT-STABILIZE-V1
 - **Target Module**: pulse-cli (packages/cli/src/commands/chb.ts)
-- **Status**: Pending
+- **Status**: Approved (Tested from human = Sacred)
 
 ## 2. Technical Scope
 - **Nature of Change**: Consistency Alignment
@@ -21,3 +21,9 @@
 ## 4. Acceptance Criteria
 - [ ] คำสั่ง `pulse chb` ทำงานได้โดยไม่อ้างอิงตัวแปรที่ไม่ได้นิยาม
 - [ ] การเลือก Repo ของ AIB ต้องใช้ค่าจาก `board.AIB.repo` เสมอ
+
+## 5. Post-Implementation Report
+- **Actual Files Modified**: `packages/cli/src/commands/chb.ts`
+- **Methodology**: Aligned context resolution to use `resolveBoardContext` for both ITB and AIB. Fixed missing imports (`resolveBoardContext`, `getCurrentOracle`).
+- **Verification**: Verified via manual handover execution (`pulse chb <id>`) to ensure context and bidirectional link establishment works correctly without reference errors.
+- **Status**: Sacred 🛡️
