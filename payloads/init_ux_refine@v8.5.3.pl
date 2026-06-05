@@ -39,7 +39,7 @@ export async function init() {
     // --- Phase 3: Config Generation ---
     const board = {
       ITB: { repo: `${itOrg}/pulse-oracle`, projectNumber: itProj },
-      AIB: { repo: githubUser, projectNumber: aiProj }
+      AIB: { repo: `${githubUser}/pulse-oracle`, projectNumber: aiProj }
     };
 
     let gateway: any;
@@ -56,7 +56,7 @@ export async function init() {
       if (gateway) config.gateway = gateway;
       if (orchestratorOracle) {
         config.orchestrator = {
-          repo: `${githubUser}/${config.oracleRepos[orchestratorOracle.toLowerCase()] || orchestratorOracle.toLowerCase() + "-oracle"}`,
+          repo: `${effectiveOrg}/${config.oracleRepos[orchestratorOracle.toLowerCase()] || orchestratorOracle.toLowerCase() + "-oracle"}`,
           oracle: orchestratorOracle.toLowerCase()
         };
       }
@@ -77,7 +77,7 @@ export async function init() {
       if (orchestratorOracle) {
         const orchRepoName = oracleRepos[orchestratorOracle.toLowerCase()] || `${orchestratorOracle.toLowerCase()}-oracle`;
         orchestrator = {
-          repo: `${githubUser}/${orchRepoName}`,
+          repo: `${effectiveOrg}/${orchRepoName}`,
           oracle: orchestratorOracle.toLowerCase()
         };
       }

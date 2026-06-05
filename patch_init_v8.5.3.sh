@@ -132,6 +132,7 @@ cd "$TARGET_PATH" && git restore .
 apply_payload "packages/cli/src/config.ts" "config_type_safety@v8.5.3" "" "config_type_safety@v8.5.3.pl" "append"
 
 # CR-002: blog.ts fix
+apply_payload "packages/cli/src/commands/blog.ts" "blog_imports_fix@v8.5.3" "import { getContext, getRepoName, loadConfig } from \"../config\";" "blog_imports@v8.5.3.pl" "replace_line"
 apply_payload "packages/cli/src/commands/blog.ts" "blog_type_fix@v8.5.3" '  const cfg = loadConfig();
   const org = ctx.org;
 const blogRepo = cfg.blog?.repo || (typeof cfg.board === "object" ? cfg.board.ITB : "itinfosv/pulse-oracle");
@@ -141,6 +142,7 @@ const blogRepo = cfg.blog?.repo || (typeof cfg.board === "object" ? cfg.board.IT
 apply_payload "packages/cli/src/commands/init.ts" "init_ux_refine@v8.5.3" "export async function init() {" "init_ux_refine@v8.5.3.pl" "replace_block" "END"
 
 # CR-003: chb.ts context fix
+apply_payload "packages/cli/src/commands/chb.ts" "chb_imports_fix@v8.5.3" "import { getContext, getCurrentOracle, loadConfig } from \"../config\";" "chb_imports@v8.5.3.pl" "replace_line"
 apply_payload "packages/cli/src/commands/chb.ts" "chb_context_fix@v8.5.3" "export async function chb(" "chb_context_fix@v8.5.3.pl" "replace_block" "END"
 
 echo "🏁 Patching Complete (v8.5.3)."
