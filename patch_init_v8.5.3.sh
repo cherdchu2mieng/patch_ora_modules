@@ -67,26 +67,32 @@ new_content = content
 if mode == "replace_block":
     if start in content:
         idx_start = content.find(start)
-        if end and end in content:
-            idx_end = content.find(end, idx_start + len(start))
-            if idx_start != -1 and idx_end != -1:
-                 new_content = content[:idx_start] + payload + content[idx_end + len(end):]
-            else:
-                 print(f"  ❌ Error: Block anchors found but overlap or logic failure")
-                 sys.exit(1)
-        elif not end:
-            new_content = content.replace(start, payload)
+        if end:
+             if end == "END":
+                 if target_file.endswith("init.ts") or target_file.endswith("chb.ts"):
+                     idx_end = content.rfind("}")
+                     if idx_end != -1 and idx_end > idx_start:
+                          new_content = content[:idx_start] + payload + content[idx_end + 1:]
+                     else:
+                          print(f"  ❌ Error: Could not find closing brace for {tag}")
+                          sys.exit(1)
+             else:
+                 idx_end = content.find(end, idx_start + len(start))
+                 if idx_start != -1 and idx_end != -1:
+                      new_content = content[:idx_start] + payload + content[idx_end + len(end):]
+                 else:
+                      print(f"  ❌ Error: Block anchors not found for {tag}")
+                      sys.exit(1)
         else:
-            print(f"  ❌ Error: Block end anchor not found: {end}")
-            sys.exit(1)
+            new_content = content.replace(start, payload)
     else:
-        print(f"  ❌ Error: Block start anchor not found")
+        print(f"  ❌ Error: Block start anchor not found: {start}")
         sys.exit(1)
 elif mode == "replace_line":
     if start in content:
         new_content = content.replace(start, payload)
     else:
-        print(f"  ❌ Error: Line anchor not found: {start}")
+        print(f"  ❌ Error: Line anchor not found")
         sys.exit(1)
 elif mode == "append":
     new_content = content.rstrip() + "\n" + payload + "\n"
@@ -94,12 +100,11 @@ else:
     if start in content:
         new_content = content.replace(start, payload + "\n" + start)
     else:
-        print(f"  ❌ Error: Anchor not found: {start}")
+        print(f"  ❌ Error: Anchor not found")
         sys.exit(1)
 
 # Add patch tag
 lines = new_content.split("\n")
-insert_pos = 0
 if len(lines) > 0 and lines[0].startswith("// @pulse-patch:"):
     if tag not in lines[0]:
         lines[0] = lines[0] + " " + tag
@@ -120,6 +125,9 @@ PY_EOF
 
 echo "🚀 Starting Patch Execution (v8.5.3)..."
 
+# 0. CLEAN RESET TARGET
+cd "$TARGET_PATH" && git restore .
+
 # CR-002: config.ts helpers
 apply_payload "packages/cli/src/config.ts" "config_type_safety@v8.5.3" "" "config_type_safety@v8.5.3.pl" "append"
 
@@ -130,9 +138,9 @@ const blogRepo = cfg.blog?.repo || (typeof cfg.board === "object" ? cfg.board.IT
   const [targetOrg, targetRepo] = blogRepo.includes("/") ? blogRepo.split("/") : [org, blogRepo];' "blog_type_fix@v8.5.3.pl" "replace_block" ""
 
 # CR-001: init.ts rewrite
-apply_payload "packages/cli/src/commands/init.ts" "init_ux_refine@v8.5.3" "export async function init() {" "init_ux_refine@v8.5.3.pl" "replace_block" "rl.close();\n  }\n}"
+apply_payload "packages/cli/src/commands/init.ts" "init_ux_refine@v8.5.3" "export async function init() {" "init_ux_refine@v8.5.3.pl" "replace_block" "END"
 
 # CR-003: chb.ts context fix
-apply_payload "packages/cli/src/commands/chb.ts" "chb_context_fix@v8.5.3" '  const { ctx: itbCtx, repo: itbFull } = resolveBoardContext("ITB");' "chb_context_fix@v8.5.3.pl" "replace_block" 'console.log("  Board (AIB): ✅ Bidirectional link established (ITB-#" + itemIndex + " <-> AIB)");'
+apply_payload "packages/cli/src/commands/chb.ts" "chb_context_fix@v8.5.3" "export async function chb(" "chb_context_fix@v8.5.3.pl" "replace_block" "END"
 
 echo "🏁 Patching Complete (v8.5.3)."
